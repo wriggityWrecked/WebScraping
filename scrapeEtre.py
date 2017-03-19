@@ -1,62 +1,78 @@
 import scrapy
+import os
+import datetime
+import json
+from pprint             import pprint
+from scrapy.crawler     import CrawlerProcess
+from etreSpider         import *
+from compareInventories import *
 
-class EtreSpider(scrapy.Spider):
+newFileName           = 'newEtreResult.json'
+inventoryFileName     = 'etreBeerInventory.json'
+resultsOutputFileName = 'results_etreBeer'
 
-    name = "etreBeerSpider"
-    
-    def start_requests(self):
-		urls = [
-		    'http://www.bieresgourmet.be/catalog/index.php?main_page=products_all&disp_order=6' #url for all beer
-		]
+def main():
 
-		for url in urls:
-			print '================================================================'
-			print 'scraping ' + url
-			print '================================================================'
+	#todo random user agent
 
-			yield scrapy.Request(url=url, callback=self.parse)
+	# #todo get the file name
+	# process = CrawlerProcess({
+	#     'USER_AGENT': 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1)',
+	# 	'FEED_FORMAT': 'json',
+	# 	'FEED_URI': newFileName
+	# })
 
-    def parse(self, response):
+	# process.crawl( EtreSpider )
+	# process.start() # the script will block here until the crawling is finished
 
-		#grab each entry listed
-		if response is not None:
-
-	 		for beer in response.xpath('//td[@class="main"]'):
-	 			
-	 			print str( beer )
-
-	 			print str( beer.css('td').xpath('@class') )
-
-	 			#id used for hashmap
-				id       = beer.xpath('./a/@href').extract()
-
-				#grab the long name
-				beerName = beer.xpath('./a/text()').extract()
+	#ok, so we finished crawling. do we have a new file?
+	#first, check if we have an inventory
 
 
-				#cleanup for json storage
-				id       = ''.join( id ).strip()
-				id       = id[7:]
-				beerName = ''.join( beerName ).strip()
+	if not os.path.isfile( newFileName ):
+		print str( newFileName ) + ' not found!'
+		#todo alert for error
+		return
 
-				#filter out location in the name
-				# if "Redwood City" != beerName and "Hollywood" != beerName and "San Francisco" != beerName and 'Read More ' not in beerName :
-				# 	yield {
-				# 		'name'  : beerName,
-				# 		'id' : int( id )
-				# 	}
+	if not os.path.isfile( inventoryFileName ):
+		print str( inventoryFileName ) + ' not found!'
+		print 'saving ' + newFileName + ' as ' + inventoryFileName
+		os.rename( newFileName, inventoryFileName )
+		#todo alert for error
+		return
 
-		links     = response.xpath('//div[@class="floatLeft"]/a[contains(text(),"next")]/@href').extract()
-		next_page = None
+	#ok, let's compare files then!
+	removed, added = compareInventories( inventoryFileName, newFileName )
+	
+	#debug printing, todo need a logger
+	print '================================='
+	print 'Removed ' + str( len ( removed ) )
+	pprint( removed )
+	print '================================='
+	print 'Added ' + str( len ( added ) )
+	pprint( added )
 
-		#did we find a link?
-		if len( links ) > 0:
-			next_page = links[0];
+	#now we have a new inventory file, rotating to inventoryFileName
+	now             = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+	rotatedFileName = 'oldEtreBeer_' + now + '.json' 
 
-		if next_page is not None:	
-			next_page = response.urljoin( next_page )
-			print '================================================================'
-			print 'scraping ' + str( next_page )
-			print '================================================================'
-			yield scrapy.Request(next_page, callback=self.parse)
+	print 'rotating ' + inventoryFileName + ' to ' + rotatedFileName
 
+	os.rename( inventoryFileName, rotatedFileName )
+	os.rename( newFileName, inventoryFileName)
+
+	#write stats to file
+	results                  = {}
+	results['removedLength'] = len ( removed ) 
+	results['removedList']   = removed
+	results['addedLength']   = len ( added ) 
+	results['addedList']     = added
+
+	pprint( results )
+
+	with open( resultsOutputFileName + '_' + now + '.json', 'w') as outfile:
+	    json.dump( results, outfile )
+
+
+if __name__ == '__main__':
+	main()
