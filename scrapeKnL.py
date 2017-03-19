@@ -13,13 +13,13 @@ resultsOutputFileName = 'results_knlBeer'
 
 def main():
 
-	#todo random user agent
+	# #todo random user agent
 
 	#todo get the file name
 	process = CrawlerProcess({
-	    'USER_AGENT': 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1)',
+	    'USER_AGENT' : 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1)',
 		'FEED_FORMAT': 'json',
-		'FEED_URI': newFileName
+		'FEED_URI'   : newFileName
 	})
 
 	process.crawl( KnLBeerSpider )
@@ -34,6 +34,8 @@ def main():
 
 	if not os.path.isfile( inventoryFileName ):
 		print str( inventoryFileName ) + ' not found!'
+		print 'saving ' + newFileName + ' as ' + inventoryFileName
+		os.rename( newFileName, inventoryFileName )
 		#todo alert for error
 		return
 
