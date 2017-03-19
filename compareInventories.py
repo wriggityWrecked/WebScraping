@@ -24,6 +24,17 @@ def compareMap( oldMap, newMap ):
 
 	return removedEntries, newEntries
 
+def inventoryFile2Dictionary( inventoryFile ):
+
+	d = {}
+	with open( inventoryFile ) as f:    
+	    data = json.load(f)
+	    for line in data:
+	    	if 'creationDate' not in line:
+	    		d[ line['id']] = line['name'].encode("utf8")
+
+	return d
+
 def compareInventories( inventoryFile, newFile ):
 
 	r = {}
@@ -45,23 +56,11 @@ def compareInventories( inventoryFile, newFile ):
 
 	print( 'Comparing ' + str( inventoryFile )  + ' ' + str( newFile ) )
 
-	hashMap1 = {}
-	with open( inventoryFile ) as f:    
-	    data = json.load(f)
-	    for line in data:
-	    	#construct dictionary, specific to KnL output
-	    	hashMap1[ line['id']] = line['name'].encode("utf8")
 
-	#pprint(hashMap1)
-
-	hashMap2 = {}
-	with open( newFile ) as f:    
-	    data = json.load(f)
-	    for line in data:
-	    	#construct dictionary
-	    	hashMap2[ line['id']] = line['name'].encode("utf8")
-
-	#pprint(hashMap2)
+	hashMap1 = inventoryFile2Dictionary( inventoryFile )
+	pprint( hashMap1 )
+	hashMap2 = inventoryFile2Dictionary( newFile )
+	pprint( hashMap2 )
 
 	r, n = compareMap( hashMap1, hashMap2 )
 
