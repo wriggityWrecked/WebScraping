@@ -1,4 +1,9 @@
 import scrapy
+import datetime
+
+#scrapy runspider knlSpider.py -o output.json
+
+dateEntry = False
 
 class KnLBeerSpider(scrapy.Spider):
 
@@ -23,6 +28,8 @@ class KnLBeerSpider(scrapy.Spider):
 
     def parse(self, response):
 
+		global dateEntry
+
 		#grab each entry listed
 		if response is not None:
 
@@ -42,6 +49,13 @@ class KnLBeerSpider(scrapy.Spider):
 
 					#filter out location in the name
 					if "Redwood City" != beerName and "Hollywood" != beerName and "San Francisco" != beerName and 'Read More ' not in beerName :
+
+						if not dateEntry:
+							dateEntry = True
+							yield {
+								'creationDate' : datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+							}
+
 						yield {
 							'name'  : beerName,
 							'id' : int( id )

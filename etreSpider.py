@@ -1,6 +1,8 @@
 import scrapy
+import datetime
 
 productKey = '_id='
+dateEntry  = False
 
 #can run with scrapy runspider etreSpider.py -o output.json
 
@@ -26,6 +28,8 @@ class EtreSpider(scrapy.Spider):
 			yield scrapy.Request(url=url, callback=self.parse)
 
     def parse(self, response):
+		
+		global dateEntry
 
 		#grab each entry listed
 		if response is not None:
@@ -45,12 +49,16 @@ class EtreSpider(scrapy.Spider):
 		 			productIndex  += len(productKey) 
 		 			id             = link[productIndex : ampersandIndex] 
 
-					#filter
+					if not dateEntry:
+						dateEntry = True
+						yield {
+							'creationDate' : datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+						}
+						
 					yield {
 						'name'  : beerName,
 						'id'    : int( id ) 
 					}
-
 		links     = response.xpath('//div[@class="navSplitPagesLinks forward"]/a[contains(text(),"Next")]/@href').extract()
 		next_page = None
 
