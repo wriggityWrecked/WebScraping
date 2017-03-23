@@ -80,17 +80,17 @@ def dprint( removed, added ):
 
 	#print ''
 	#print '=================================================================='
-	logging.error( '' )
-	logging.error( 'Removed: ' + str( len ( removed ) ) )
-	logging.error( '' )
-	logging.error( pprint( removed ) )
-	logging.error( '' )
-	logging.error( '==================================================================' )
-	logging.error( '' )
-	logging.error( 'Added:   ' + str( len ( added ) ) )
-	logging.error( '' )
-	logging.error( pprint( added ) )
-	logging.error( '' )
+	logging.info( '' )
+	logging.info( 'Removed: ' + str( len ( removed ) ) )
+	logging.info( '' )
+	logging.info( pprint( removed ) )
+	logging.info( '' )
+	logging.info( '==================================================================' )
+	logging.info( '' )
+	logging.info( 'Added:   ' + str( len ( added ) ) )
+	logging.info( '' )
+	logging.info( pprint( added ) )
+	logging.info( '' )
 	#print '=================================================================='
 
 def main():
