@@ -1,0 +1,19 @@
+todo
+
+ - don't be stupid, three scraping scripts can be turned into a single function + script
+
+ - logging
+ 	- most recent log is symlinked
+ 	- each project should have its own folder
+ 	- each project log should have its own folder
+ 	- each log should be organized by month
+
+ - send email
+	- get email setup via python / or command line
+	- need gmail account for the pi - need name
+
+ - schedule python scrape scripts as chron jobs
+
+ - setup raspberry PI
+	- document everything
+  	- need python scrapy and ssl

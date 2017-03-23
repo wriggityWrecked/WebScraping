@@ -1,8 +1,9 @@
 import json
 import sys
 import filecmp
-import os.path
+import os
 from pprint import pprint
+import logging
 
 def compareMap( oldMap, newMap ):
 
@@ -31,7 +32,7 @@ def inventoryFile2Dictionary( inventoryFile ):
 	    data = json.load(f)
 	    for line in data:
 	    	if 'creationDate' not in line:
-	    		d[ line['id']] = line['name'].encode("utf8")
+				d[ line['id'] ] = line[ 'name' ].encode( "utf8" )
 
 	return d
 
@@ -41,34 +42,66 @@ def compareInventories( inventoryFile, newFile ):
 	n = {}
 
 	if not os.path.isfile( inventoryFile ):
-		print str( inventoryFile ) + ' not found!'
+		logging.error( str( inventoryFile ) + ' not found!' )
+		#todo alert for error, return empties
+		return r,n
+
+	if os.stat( inventoryFile ).st_size == 0:
+		logging.error(  str( inventoryFile ) + ' is empty!' )
 		#todo alert for error, return empties
 		return r,n
 
 	if not os.path.isfile( newFile ):
-		print str( newFile ) + ' not found!'
+		logging.error(  str( newFile ) + ' not found!' )
+		#todo alert for error, return empties
+		return r,n8
+
+	if os.stat( newFile ).st_size == 0:
+		logging.error(  str( newFile ) + ' is empty!' )
 		#todo alert for error, return empties
 		return r,n
 
 	if filecmp.cmp(inventoryFile, newFile, shallow=False):
-		print str( inventoryFile ) + ' is equal to ' + str( newFile ) + ', no differences!'
+		logging.inform(  str( inventoryFile ) + ' is equal to ' + str( newFile ) + ', no differences!' )
 		return r,n
 
-	print( 'Comparing ' + str( inventoryFile )  + ' ' + str( newFile ) )
+	#print '=================================================================='	
+	#print( 'Comparing ' + str( inventoryFile )  + ' ' + str( newFile ) )
 
 
 	hashMap1 = inventoryFile2Dictionary( inventoryFile )
-	pprint( hashMap1 )
 	hashMap2 = inventoryFile2Dictionary( newFile )
-	pprint( hashMap2 )
 
 	r, n = compareMap( hashMap1, hashMap2 )
 
-	#print '================================='
-	#print 'Removed ' + str( len ( r ) )
-	#pprint( r )
-	#print '================================='
-	#print 'Added ' + str( len ( n ) )
-	#pprint( n )
-
 	return r, n
+
+def dprint( removed, added ):
+
+	#print ''
+	#print '=================================================================='
+	logging.error( '' )
+	logging.error( 'Removed: ' + str( len ( removed ) ) )
+	logging.error( '' )
+	logging.error( pprint( removed ) )
+	logging.error( '' )
+	logging.error( '==================================================================' )
+	logging.error( '' )
+	logging.error( 'Added:   ' + str( len ( added ) ) )
+	logging.error( '' )
+	logging.error( pprint( added ) )
+	logging.error( '' )
+	#print '=================================================================='
+
+def main():
+
+	#compare 2 files
+	if len( sys.argv ) < 3:
+		print 'must input two file names'
+		return
+
+	r,n = compareInventories( sys.argv[1], sys.argv[2] )
+	dprint( r, n )
+
+if __name__ == '__main__':
+	main()
