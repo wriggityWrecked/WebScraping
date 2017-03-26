@@ -16,14 +16,14 @@ def main():
 	# #todo random user agent
 
 	#todo get the file name
-	# process = CrawlerProcess({
-	#     'USER_AGENT' : 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1)',
-	# 	'FEED_FORMAT': 'json',
-	# 	'FEED_URI'   : newFileName
-	# })
+	process = CrawlerProcess({
+	    'USER_AGENT' : 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1)',
+		'FEED_FORMAT': 'json',
+		'FEED_URI'   : newFileName
+	})
 
-	# process.crawl( BelgianHappinessSpider )
-	# process.start() # the script will block here until the crawling is finished
+	process.crawl( BelgianHappinessSpider )
+	process.start() # the script will block here until the crawling is finished
 
 	#ok, so we finished crawling. do we have a new file?
 
