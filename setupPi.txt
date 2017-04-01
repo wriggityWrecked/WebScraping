@@ -1,0 +1,16 @@
+remove default user, add new user + sudoers then delete default
+
+sudo apt-get install vim
+sudo apt-get install libxml2-dev libxslt-dev
+sudo apt-get install python3-dev
+sudo apt-get install python-dev 
+sudo apt-get install python-lxml
+sudo python -m pip install scrapy
+sudo pip install twisted --upgrade
+
+sudo pip install pprint
+sudo apt-get install libffi-dev
+
+sudo pip install --upgrade pyopenssl
+sudp apt-get install libssl-dev
+sudo pip install cryptography
