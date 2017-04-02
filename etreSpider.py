@@ -1,7 +1,6 @@
 import scrapy
 import datetime
 import logging
-from random import *
 
 productKey = '_id='
 dateEntry  = False
@@ -12,11 +11,10 @@ class EtreSpider(scrapy.Spider):
 
 	logger        = logging.getLogger(__name__)
 	name          = "etreBeerSpider"
-	downloadDelay = randint( 7, 34 )
 
 	custom_settings = {
 	    'COOKIES_ENABLED': 'false',
-	    'DOWNLOAD_DELAY': str( downloadDelay )
+	    'DOWNLOAD_DELAY': '8'
 	}
 
 	def start_requests(self):
