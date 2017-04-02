@@ -8,11 +8,12 @@ dateEntry  = False
 
 class EtreSpider(scrapy.Spider):
 
+	logger = logging.getLogger(__name__)
     name = "etreBeerSpider"
     
     custom_settings = {
         'COOKIES_ENABLED': 'false',
-        'DOWNLOAD_DELAY': '8'
+        'DOWNLOAD_DELAY': '15'
     }
     
     def start_requests(self):
@@ -21,9 +22,9 @@ class EtreSpider(scrapy.Spider):
 		]
 
 		for url in urls:
-			print '================================================================'
-			print 'scraping ' + url
-			print '================================================================'
+			logger.info( '================================================================' )
+			logger.info( 'scraping ' + url )
+			logger.info( '================================================================' )
 
 			yield scrapy.Request(url=url, callback=self.parse)
 
@@ -68,8 +69,8 @@ class EtreSpider(scrapy.Spider):
 
 		if next_page is not None:	
 			next_page = response.urljoin( next_page )
-			print '================================================================'
-			print 'scraping ' + str( next_page )
-			print '================================================================'
+			logger.info( '================================================================' )
+			logger.info( 'scraping ' + str( next_page ) )
+			logger.info( '================================================================' )
 			yield scrapy.Request(next_page, callback=self.parse)
 

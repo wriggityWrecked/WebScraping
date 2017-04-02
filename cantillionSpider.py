@@ -6,6 +6,7 @@ import logging
 #https://shop.cantillon.be/en/
 #https://shop.cantillon.be/en/beers/49-exceptional-cuvee-cantillon.html#
 #https://www.reddit.com/r/atlbeer/comments/5bzoc4/ratlbeer_random_daily_discussion_november_09_2016/
+#https://shop.cantillon.be/en/27-beers
 
 dateEntry = False
 

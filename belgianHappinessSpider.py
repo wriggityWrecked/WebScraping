@@ -7,12 +7,13 @@ import logging
 dateEntry = False
 
 class BelgianHappinessSpider(scrapy.Spider):
-
+	
+	logger = logging.getLogger(__name__)
     name = "belgianHappinessSpider"
     
     custom_settings = {
         'COOKIES_ENABLED': 'false',
-        'DOWNLOAD_DELAY' : '8'
+        'DOWNLOAD_DELAY' : '15'
     }
 
     def start_requests(self):

@@ -7,7 +7,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
 def compareMap( oldMap, newMap ):
 
 	#print str ( len( oldMap ) ) 
@@ -40,6 +39,7 @@ def inventoryFile2Dictionary( inventoryFile ):
 	return d
 
 def resultsFile2Dictionary( resultsFile ):
+	
 	d = {}
 
 	if not os.path.isfile( resultsFile ):
@@ -96,8 +96,6 @@ def compareInventories( inventoryFile, newFile ):
 
 def dprint( removed, added ):
 
-	#print ''
-	#print '=================================================================='
 	logging.info( '' )
 	logging.info( 'Removed: ' + str( len ( removed ) ) )
 	logging.info( '' )
@@ -109,7 +107,6 @@ def dprint( removed, added ):
 	logging.info( '' )
 	logging.info( pprint( added ) )
 	logging.info( '' )
-	#print '=================================================================='
 
 def main():
 
