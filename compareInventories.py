@@ -62,22 +62,22 @@ def compareInventories( inventoryFile, newFile ):
 		return r,n
 
 	if os.stat( inventoryFile ).st_size == 0:
-		logging.error(  str( inventoryFile ) + ' is empty!' )
+		logging.error( str( inventoryFile ) + ' is empty!' )
 		#todo alert for error, return empties
 		return r,n
 
 	if not os.path.isfile( newFile ):
-		logging.error(  str( newFile ) + ' not found!' )
-		#todo alert for error, return empties
-		return r,n8
-
-	if os.stat( newFile ).st_size == 0:
-		logging.error(  str( newFile ) + ' is empty!' )
+		logging.error( str( newFile ) + ' not found!' )
 		#todo alert for error, return empties
 		return r,n
 
-	if filecmp.cmp(inventoryFile, newFile, shallow=False):
-		logging.inform(  str( inventoryFile ) + ' is equal to ' + str( newFile ) + ', no differences!' )
+	if os.stat( newFile ).st_size == 0:
+		logging.error( str( newFile ) + ' is empty!' )
+		#todo alert for error, return empties
+		return r,n
+
+	if filecmp.cmp( inventoryFile, newFile, shallow=False ):
+		logging.info( str( inventoryFile ) + ' is equal to ' + str( newFile ) + ', no differences!' )
 		return r,n
 
 	#print '=================================================================='	

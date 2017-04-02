@@ -2,11 +2,13 @@ import scrapy
 import os
 import datetime
 import json
+import logging
 from pprint             import pprint
 from scrapy.crawler     import CrawlerProcess
 from etreSpider         import *
 from compareInventories import *
 from slackTools         import *
+from getRandomUserAgent import * 
 
 class Scraper:
 	'Base class for all scrapers'
@@ -15,22 +17,38 @@ class Scraper:
 
 		self.name                  = name
 		self.spider                = spider
-		self.newFileName           = 'new_' + name + 'Result.json'
-		self.inventoryFileName     = name + 'BeerInventory.json'
-		self.resultsOutputFileName = 'results_' + name + 'Beer' #append time and .json later
-		self.rotatedFileName       = 'old_' + name              #append time and .json later
 		self.productLink           = productLink                #can be blank
-		self.slackChannel          = slackChannel              
-		#todo really need to add a logger
+		self.slackChannel          = slackChannel   
+		baseDirectory              = './' + name
+		self.archiveDirectory      = baseDirectory         + '/' + datetime.datetime.now().strftime( "%Y-%m")     
+		self.newFileName           = baseDirectory         + '/' + 'new_' + name + 'Result.json'
+		self.inventoryFileName     = baseDirectory         + '/' + name + 'BeerInventory.json'
+		self.resultsOutputFileName = self.archiveDirectory + '/' + 'results_' + name + 'Beer' #append time and .json later
+		self.rotatedFileName       = self.archiveDirectory + '/' + 'old_' + name              #append time and .json later
+		logDirectory               = baseDirectory         + '/' + 'log' 
+		logName                    = logDirectory          + '/' + name + '_' + datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S") + '.log'
 
-		#todo housekeeping for files storage, e.g.
-		#currentDirectory/name/year-month/
-		#try to get it and if it doesn't exist then create (for current year and month)
+		#housekeeping for files storage, e.g.
+		#named directory for results
+		if not os.path.isdir( baseDirectory ):
+			logging.info( 'creating ' + baseDirectory )
+			os.makedirs( baseDirectory )
+
+		if not os.path.isdir( self.archiveDirectory ):
+			logging.info( 'creating ' + self.archiveDirectory )
+			os.makedirs( self.archiveDirectory )
+
+
+		if not os.path.isdir( logDirectory ):
+			logging.info( 'creating ' + logDirectory )
+			os.makedirs( logDirectory )
+
+		logging.basicConfig(filename=logName, filemode='w', level=logging.DEBUG, format='%(asctime)s-%(levelname)s:%(message)s', datefmt='%m/%d/%YT%I:%M:%S%p')
 
 	def scrape( self ):
 
 		process = CrawlerProcess({
-		    'USER_AGENT' : 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1)', #todo need to rotate this out
+		    'USER_AGENT' : getUserAgent(),
 			'FEED_FORMAT': 'json',
 			'FEED_URI'   : self.newFileName
 		})
@@ -41,13 +59,13 @@ class Scraper:
 		#ok, so we finished crawling. do we have a new file?
 
 		if not os.path.isfile( self.newFileName ):
-			print( str( self.newFileName ) + ' not found!' )
+			logging.warning( ( str( self.newFileName ) + ' not found!' ) )
 			#todo alert for error
 			return
 
 		if not os.path.isfile( self.inventoryFileName ):
-			print str( self.inventoryFileName ) + ' not found!'
-			print 'saving ' + self.newFileName + ' as ' + self.inventoryFileName
+			logging.warning( str( self.inventoryFileName ) + ' not found!' )
+			logging.info( 'saving ' + self.newFileName + ' as ' + self.inventoryFileName )
 			os.rename( self.newFileName, self.inventoryFileName )
 			#todo alert for error
 			return
@@ -55,14 +73,14 @@ class Scraper:
 		#ok, let's compare files then!
 		removed, added = compareInventories( self.inventoryFileName, self.newFileName )
 
-		#debug printing, todo need a logger
+		#debug printing
 		dprint( removed, added )
 
 		#now we have a new inventory file, rotating to inventoryFileName
 		now                  = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 		self.rotatedFileName = self.rotatedFileName + now + '.json' 
 
-		print 'rotating ' + self.inventoryFileName + ' to ' + self.rotatedFileName
+		logging.debug( 'rotating ' + self.inventoryFileName + ' to ' + self.rotatedFileName )
 
 		os.rename( self.inventoryFileName, self.rotatedFileName )
 		os.rename( self.newFileName, self.inventoryFileName)
@@ -74,12 +92,12 @@ class Scraper:
 		results['addedLength']   = len ( added ) 
 		results['addedList']     = added
 
-		print ''
-		print 'results = '  
-		pprint( results )
+		logging.info( 'results = ' + str( results ) )
 
-		with open( self.resultsOutputFileName + '_' + now + '.json', 'w') as outfile:
+		#save results
+		self.resultsOutputFileName = self.resultsOutputFileName + '_' + now + '.json'
+		with open( self.resultsOutputFileName, 'w') as outfile:
 		    json.dump( results, outfile )
 
 		#post to slack
-
+		postResultsToSlackChannel( results, self.productLink, self.slackChannel ) 

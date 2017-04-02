@@ -1,5 +1,6 @@
 import scrapy
 import datetime
+import logging
 
 #scrapy runspider knlSpider.py -o output.json
 
@@ -20,9 +21,9 @@ class KnLBeerSpider(scrapy.Spider):
 		]
 
 		for url in urls:
-			print '================================================================'
-			print 'scraping ' + url
-			print '================================================================'
+			logging.info( '================================================================' )
+			logging.info( 'scraping ' + url )
+			logging.info( '================================================================' )
 
 			yield scrapy.Request(url=url, callback=self.parse)
 
@@ -70,8 +71,8 @@ class KnLBeerSpider(scrapy.Spider):
 
 		if next_page is not None:	
 			next_page = response.urljoin( next_page )
-			print '================================================================'
-			print 'scraping ' + str( next_page )
-			print '================================================================'
+			logging.info( '================================================================' )
+			logging.info( 'scraping ' + str( next_page ) )
+			logging.info( '================================================================' )
 			yield scrapy.Request(next_page, callback=self.parse)
 
