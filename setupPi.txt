@@ -33,3 +33,4 @@ setup slackbot
  add bot user
  install to team
  
+sudo pip install -U pyasn1

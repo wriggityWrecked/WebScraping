@@ -43,9 +43,12 @@ class Scraper:
 			logging.info( 'creating ' + logDirectory )
 			os.makedirs( logDirectory )
 
+		logger = logging.getLogger(__name__ + ':' + self.name)
 		logging.basicConfig(filename=logName, filemode='w', level=logging.DEBUG, format='%(asctime)s-%(levelname)s:%(message)s', datefmt='%m/%d/%YT%I:%M:%S%p')
 
 	def scrape( self ):
+
+		logger = logging.getLogger(__name__ + ':' + self.name)
 
 		process = CrawlerProcess({
 		    'USER_AGENT' : getUserAgent(),
@@ -98,4 +101,7 @@ class Scraper:
 		    json.dump( results, outfile )
 
 		#post to slack
-		postResultsToSlackChannel( results, self.productLink, self.slackChannel ) 
+		if not self.productLink:
+			postResultsToSlackChannelWithLink( results, self.productLink, self.slackChannel ) 
+		else:
+			postResultsToSlackChannel( results, self.slackChannel ) 

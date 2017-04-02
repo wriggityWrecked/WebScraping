@@ -4,9 +4,7 @@ from pprint             import pprint
 import os
 import subprocess
 
-etreLink   = 'http://www.bieresgourmet.be/catalog/index.php?main_page=product_info&products_id='
-knlLink    = 'http://www.klwines.com/p/i?i='
-knlChannel = 'knlscraper'
+logger = logging.getLogger(__name__)
 
 #so far link format only really works for prepend
 def constructSlackMessageWithLink( resultsDictionary, linkFormat ):
@@ -66,18 +64,36 @@ def postMessage( channel, message ):
 	sc = SlackClient(slackToken.strip())
 
 	#check if token is empty
+	if not sc:
+		logger.warn( 'Empty SlackToken!' )
+		return
+
+	#check channel
+	if not channel:
+		logger.warn( 'Empty channel!' )
+		return
+
 	#check if message is empty
+	if not mesage:
+		logger.warn( 'Empty message!' )
+		return
 
 	#todo log
-	print sc.api_call(
+	output =  sc.api_call(
 	  'chat.postMessage',
 	  channel = '#' + channel,
 	  text    = message
 	)
+	logger.inform( output )
 
-def postResultsToSlackChannel( resultsDictionary, linkFormat, channelName ):
+def postResultsToSlackChannelWithLink( resultsDictionary, linkFormat, channelName ):
 
 	message = constructSlackMessageWithLink( resultsDictionary, linkFormat  )
+	postMessage( channelName, message )
+
+def postResultsToSlackChannel( resultsDictionary, channelName ):
+
+	message = constructSlackMessage( resultsDictionary )
 	postMessage( channelName, message )
 
 def test( fileName, linkFormat, channelName ):

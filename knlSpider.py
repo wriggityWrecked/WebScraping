@@ -8,14 +8,15 @@ dateEntry = False
 
 class KnLBeerSpider(scrapy.Spider):
 
-    name = "knlBeerSpider"
+	logger = logging.getLogger(__name__)
+	name   = "knlBeerSpider"
     
-    custom_settings = {
-        'COOKIES_ENABLED': 'false',
-        'DOWNLOAD_DELAY': '8'
-    }
+	custom_settings = {
+		'COOKIES_ENABLED': 'false',
+		'DOWNLOAD_DELAY': '8'
+	}
 
-    def start_requests(self):
+	def start_requests(self):
 		urls = [
 		    'http://www.klwines.com/Products/r?&r=4294956886+82&&o=3&z=False' #url for all beer
 		]
@@ -27,8 +28,9 @@ class KnLBeerSpider(scrapy.Spider):
 
 			yield scrapy.Request(url=url, callback=self.parse)
 
-    def parse(self, response):
+	def parse(self, response):
 
+		logger = logging.getLogger(__name__)
 		global dateEntry
 
 		#grab each entry listed
