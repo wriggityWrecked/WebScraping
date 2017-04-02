@@ -6,10 +6,14 @@ from pprint             import pprint
 from scrapy.crawler     import CrawlerProcess
 from knlSpider          import *
 from compareInventories import *
+from testSlack          import *
 
 newFileName           = 'newKnlResult.json'
 inventoryFileName     = 'knlBeerInventory.json'
 resultsOutputFileName = 'results_knlBeer'
+
+#todo need a results directory
+#dir per mongth
 
 def main():
 
@@ -28,7 +32,7 @@ def main():
 	#ok, so we finished crawling. do we have a new file?
 
 	if not os.path.isfile( newFileName ):
-		print str( newFileName ) + ' not found!'
+		print( str( newFileName ) + ' not found!' )
 		#todo alert for error
 		return
 
@@ -67,6 +71,9 @@ def main():
 
 	with open( resultsOutputFileName + '_' + now + '.json', 'w') as outfile:
 	    json.dump( results, outfile )
+
+	#post to slack
+	knlSlack( results )
 
 if __name__ == '__main__':
 	main()

@@ -18,6 +18,8 @@ todo
 	- document everything
   	- need python scrapy and ssl
 
+ - make a front facing site to load the JSON data
+ 	- maybe DJANGO?
 
 ================
 

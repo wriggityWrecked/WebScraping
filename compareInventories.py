@@ -36,6 +36,21 @@ def inventoryFile2Dictionary( inventoryFile ):
 
 	return d
 
+def resultsFile2Dictionary( resultsFile ):
+	d = {}
+
+	if not os.path.isfile( resultsFile ):
+		logging.error( str( resultsFile ) + ' not found!' )
+		return d
+
+	if os.stat( resultsFile ).st_size == 0:
+		logging.error(  str( resultsFile ) + ' is empty!' )
+		return d
+		
+	with open( resultsFile ) as f:    
+	    d = json.load(f)
+	return d
+
 def compareInventories( inventoryFile, newFile ):
 
 	r = {}

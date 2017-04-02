@@ -14,3 +14,22 @@ sudo apt-get install libffi-dev
 sudo pip install --upgrade pyopenssl
 sudp apt-get install libssl-dev
 sudo pip install cryptography
+
+
+=======
+
+setup slackbot
+
+ - create team
+ - create channel
+ - invite bot email
+
+ sudo pip install slackclient
+
+ http://slackapi.github.io/python-slackclient/auth.html#handling-tokens
+
+ create a slack app bot
+ https://api.slack.com/slack-apps
+ add bot user
+ install to team
+ 
