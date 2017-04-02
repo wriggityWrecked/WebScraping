@@ -51,9 +51,10 @@ class Scraper:
 		logger = logging.getLogger(__name__ + ':' + self.name)
 
 		process = CrawlerProcess({
-		    'USER_AGENT' : getUserAgent(),
-			'FEED_FORMAT': 'json',
-			'FEED_URI'   : self.newFileName
+		    'USER_AGENT'           : getUserAgent(),
+			'FEED_FORMAT'          : 'json',
+			'FEED_URI'             : self.newFileName,
+			'AUTOTHROTTLE_ENABLED' : 'True'
 		})
 
 		process.crawl( self.spider )
@@ -102,6 +103,7 @@ class Scraper:
 
 		#post to slack
 		if not self.productLink:
-			postResultsToSlackChannelWithLink( results, self.productLink, self.slackChannel ) 
-		else:
 			postResultsToSlackChannel( results, self.slackChannel ) 
+		else:
+			postResultsToSlackChannelWithLink( results, self.productLink, self.slackChannel ) 
+

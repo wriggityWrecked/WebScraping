@@ -83,7 +83,7 @@ def postMessage( channel, message ):
 	  channel = '#' + channel,
 	  text    = message
 	)
-	logger.inform( output )
+	logger.info( output )
 
 def postResultsToSlackChannelWithLink( resultsDictionary, linkFormat, channelName ):
 

@@ -1,6 +1,7 @@
 import scrapy
 import datetime
 import logging
+from random import *
 
 #scrapy runspider belgianHappinessSpider.py -o output.json
 #https://shop.cantillon.be/en/

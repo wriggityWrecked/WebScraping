@@ -1,6 +1,7 @@
 import scrapy
 import datetime
 import logging
+from random import *
 
 #scrapy runspider belgianHappinessSpider.py -o output.json
 
@@ -8,12 +9,13 @@ dateEntry = False
 
 class BelgianHappinessSpider(scrapy.Spider):
 	
-	logger = logging.getLogger(__name__)
-	name = "belgianHappinessSpider"
+	logger        = logging.getLogger(__name__)
+	name          = "belgianHappinessSpider"
+	downloadDelay = randint( 7, 34 )
 
 	custom_settings = {
 	    'COOKIES_ENABLED': 'false',
-	    'DOWNLOAD_DELAY' : '15'
+	    'DOWNLOAD_DELAY': str( downloadDelay )
 	}
 
 	def start_requests(self):
