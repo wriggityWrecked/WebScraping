@@ -74,11 +74,10 @@ def postMessage( channel, message ):
 		return
 
 	#check if message is empty
-	if not mesage:
+	if not message:
 		logger.warn( 'Empty message!' )
 		return
 
-	#todo log
 	output =  sc.api_call(
 	  'chat.postMessage',
 	  channel = '#' + channel,
