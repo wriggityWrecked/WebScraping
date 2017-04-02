@@ -9,14 +9,14 @@ dateEntry  = False
 class EtreSpider(scrapy.Spider):
 
 	logger = logging.getLogger(__name__)
-    name = "etreBeerSpider"
-    
-    custom_settings = {
-        'COOKIES_ENABLED': 'false',
-        'DOWNLOAD_DELAY': '15'
-    }
-    
-    def start_requests(self):
+	name = "etreBeerSpider"
+
+	custom_settings = {
+	    'COOKIES_ENABLED': 'false',
+	    'DOWNLOAD_DELAY': '15'
+	}
+
+	def start_requests(self):
 		urls = [
 		    'http://www.bieresgourmet.be/catalog/index.php?main_page=products_all&disp_order=6' #url for all beer
 		]
@@ -28,7 +28,7 @@ class EtreSpider(scrapy.Spider):
 
 			yield scrapy.Request(url=url, callback=self.parse)
 
-    def parse(self, response):
+	def parse(self, response):
 		
 		global dateEntry
 

@@ -9,14 +9,14 @@ dateEntry = False
 class BelgianHappinessSpider(scrapy.Spider):
 	
 	logger = logging.getLogger(__name__)
-    name = "belgianHappinessSpider"
-    
-    custom_settings = {
-        'COOKIES_ENABLED': 'false',
-        'DOWNLOAD_DELAY' : '15'
-    }
+	name = "belgianHappinessSpider"
 
-    def start_requests(self):
+	custom_settings = {
+	    'COOKIES_ENABLED': 'false',
+	    'DOWNLOAD_DELAY' : '15'
+	}
+
+	def start_requests(self):
     	#this will add duplicates in the output file
 		urls = [
 			#'https://www.belgianhappiness.com/limited-editions',
