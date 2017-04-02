@@ -31,8 +31,9 @@ class BelgianHappinessSpider(scrapy.Spider):
 
 			yield scrapy.Request(url=url, callback=self.parse)
 
-    def parse(self, response):
+	def parse(self, response):
 
+		logger = logging.getLogger(__name__)
 		global dateEntry
 
 		#grab each entry listed

@@ -1,5 +1,6 @@
 import scrapy
 import datetime
+import logging
 
 productKey = '_id='
 dateEntry  = False
@@ -22,14 +23,15 @@ class EtreSpider(scrapy.Spider):
 		]
 
 		for url in urls:
-			logger.info( '================================================================' )
-			logger.info( 'scraping ' + url )
-			logger.info( '================================================================' )
+			logging.info( '================================================================' )
+			logging.info( 'scraping ' + url )
+			logging.info( '================================================================' )
 
 			yield scrapy.Request(url=url, callback=self.parse)
 
 	def parse(self, response):
 		
+		logger = logging.getLogger(__name__)
 		global dateEntry
 
 		#grab each entry listed
@@ -69,8 +71,8 @@ class EtreSpider(scrapy.Spider):
 
 		if next_page is not None:	
 			next_page = response.urljoin( next_page )
-			logger.info( '================================================================' )
-			logger.info( 'scraping ' + str( next_page ) )
-			logger.info( '================================================================' )
+			logging.info( '================================================================' )
+			logging.info( 'scraping ' + str( next_page ) )
+			logging.info( '================================================================' )
 			yield scrapy.Request(next_page, callback=self.parse)
 

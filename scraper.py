@@ -5,7 +5,6 @@ import json
 import logging
 from pprint             import pprint
 from scrapy.crawler     import CrawlerProcess
-from etreSpider         import *
 from compareInventories import *
 from slackTools         import *
 from getRandomUserAgent import * 
@@ -44,10 +43,11 @@ class Scraper:
 			os.makedirs( logDirectory )
 
 		logger = logging.getLogger(__name__ + ':' + self.name)
-		logging.basicConfig(filename=logName, filemode='w', level=logging.DEBUG, format='%(asctime)s-%(levelname)s:%(message)s', datefmt='%m/%d/%YT%I:%M:%S%p')
+		#todo UTC time
+		logging.basicConfig(filename=logName, filemode='w', level=logging.DEBUG, format='%(asctime)s-%(module)s:%(levelname)s:%(message)s', datefmt='%Y-%m-%dT%I:%M:%S%p')
 
 	def scrape( self ):
-
+		#todo this needs to be split up functionally with better error handling
 		logger = logging.getLogger(__name__ + ':' + self.name)
 
 		process = CrawlerProcess({
