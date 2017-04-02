@@ -12,7 +12,7 @@ class KnLBeerSpider(scrapy.Spider):
     
     custom_settings = {
         'COOKIES_ENABLED': 'false',
-        'DOWNLOAD_DELAY': '4'
+        'DOWNLOAD_DELAY': '8'
     }
 
     def start_requests(self):

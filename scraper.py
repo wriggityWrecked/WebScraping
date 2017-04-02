@@ -60,14 +60,12 @@ class Scraper:
 
 		if not os.path.isfile( self.newFileName ):
 			logging.warning( ( str( self.newFileName ) + ' not found!' ) )
-			#todo alert for error
 			return
 
 		if not os.path.isfile( self.inventoryFileName ):
 			logging.warning( str( self.inventoryFileName ) + ' not found!' )
 			logging.info( 'saving ' + self.newFileName + ' as ' + self.inventoryFileName )
 			os.rename( self.newFileName, self.inventoryFileName )
-			#todo alert for error
 			return
 
 		#ok, let's compare files then!
@@ -92,7 +90,7 @@ class Scraper:
 		results['addedLength']   = len ( added ) 
 		results['addedList']     = added
 
-		logging.info( 'results = ' + str( results ) )
+		logging.debug( 'results = ' + str( results ) )
 
 		#save results
 		self.resultsOutputFileName = self.resultsOutputFileName + '_' + now + '.json'
