@@ -23,7 +23,7 @@ class Scraper:
 		self.newFileName           = baseDirectory         + '/' + 'new_' + name + 'Result.json'
 		self.inventoryFileName     = baseDirectory         + '/' + name + 'BeerInventory.json'
 		self.resultsOutputFileName = self.archiveDirectory + '/' + 'results_' + name + 'Beer' #append time and .json later
-		self.rotatedFileName       = self.archiveDirectory + '/' + 'old_' + name              #append time and .json later
+		self.rotatedFileName       = self.archiveDirectory + '/' + 'old_' + name + '_'        #append time and .json later
 		logDirectory               = baseDirectory         + '/' + 'log' 
 		logName                    = logDirectory          + '/' + name + '_' + datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S") + '.log'
 
@@ -44,7 +44,7 @@ class Scraper:
 
 		logger = logging.getLogger(__name__ + ':' + self.name)
 		#todo UTC time
-		logging.basicConfig(filename=logName, filemode='w', level=logging.DEBUG, format='%(asctime)s-%(module)s:%(levelname)s:%(message)s', datefmt='%Y-%m-%dT%I:%M:%S%p')
+		logging.basicConfig(filename=logName, filemode='w', level=logging.DEBUG, format='%(asctime)s-%(module)s:%(levelname)s:%(message)s', datefmt='%Y-%m-%dT%H:%M:%S')
 
 	def scrape( self ):
 		#todo this needs to be split up functionally with better error handling
