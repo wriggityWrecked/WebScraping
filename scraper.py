@@ -3,6 +3,8 @@ import os
 import datetime
 import json
 import logging
+import time
+from datetime           import timedelta
 from pprint             import pprint
 from scrapy.crawler     import CrawlerProcess
 from compareInventories import *
@@ -47,6 +49,10 @@ class Scraper:
 		logging.basicConfig(filename=logName, filemode='w', level=logging.DEBUG, format='%(asctime)s-%(module)s:%(levelname)s:%(message)s', datefmt='%Y-%m-%dT%H:%M:%S')
 
 	def scrape( self ):
+
+		startTime = time.time()
+		postMessage( 'botinfo', 'starting crawler ' + self.name )
+
 		#todo this needs to be split up functionally with better error handling
 		logger = logging.getLogger(__name__ + ':' + self.name)
 
@@ -107,3 +113,4 @@ class Scraper:
 		else:
 			postResultsToSlackChannelWithLink( results, self.productLink, self.slackChannel ) 
 
+		postMessage( 'botinfo', 'finished crawler ' + self.name + ', time taken = ' + str( timedelta( seconds=( time.time()-startTime ) ) ) )

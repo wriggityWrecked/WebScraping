@@ -32,6 +32,9 @@ def constructSlackMessageWithLink( resultsDictionary, linkFormat ):
 				message += t[1] + " : " + ls + str( t[0] ) + '\n\n'
 		else:
 			message += '\n\n'.join( ' : '.join( t ) for t in addedList.items() )
+	else:
+		#nothing added, so don't construct a message
+		return ''
 
 	if 'removedLength' in resultsDictionary and 'removedList' in resultsDictionary:
 		removed     = int( resultsDictionary['removedLength'] )
