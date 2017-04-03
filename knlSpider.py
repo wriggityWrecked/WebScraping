@@ -1,6 +1,7 @@
 import scrapy
 import datetime
 import logging
+from random import *
 
 #scrapy runspider knlSpider.py -o output.json
 
@@ -10,10 +11,11 @@ class KnLBeerSpider(scrapy.Spider):
 
 	logger        = logging.getLogger(__name__)
 	name          = "knlBeerSpider"
+	downloadDelay = randint( 8, 15 )
 
 	custom_settings = {
 	    'COOKIES_ENABLED': 'false',
-	    'DOWNLOAD_DELAY': '8'
+	    'DOWNLOAD_DELAY': str( downloadDelay )
 	}
 
 	def start_requests(self):
