@@ -12,7 +12,7 @@ from slackTools         import *
 from getRandomUserAgent import * 
 
 class Scraper:
-	
+
 	'Base class for all scrapers'
 
 	def __init__( self, name, spider, productLink, slackChannel ):
@@ -28,7 +28,7 @@ class Scraper:
 		self.resultsOutputFileName = self.archiveDirectory + '/' + 'results_' + name + 'Beer' #append time and .json later
 		self.rotatedFileName       = self.archiveDirectory + '/' + 'old_' + name + '_'        #append time and .json later
 		logDirectory               = baseDirectory         + '/' + 'log' 
-		logName                    = logDirectory          + '/' + name + '_' + datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S") + '.log'
+		logName                    = logDirectory          + '/' + name + '_' + datetime.datetime.now().strftime( "%Y-%m-%dT%H:%M:%S" ) + '.log'
 
 		#housekeeping for files storage, e.g.
 		#named directory for results
@@ -45,9 +45,9 @@ class Scraper:
 			logging.info( 'creating ' + logDirectory )
 			os.makedirs( logDirectory )
 
-		logger = logging.getLogger(__name__ + ':' + self.name)
+		logger = logging.getLogger( __name__ )
 		#todo UTC time
-		logging.basicConfig(filename=logName, filemode='w', level=logging.DEBUG, format='%(asctime)s-%(module)s:%(levelname)s:%(message)s', datefmt='%Y-%m-%dT%H:%M:%S')
+		logging.basicConfig( filename=logName, filemode='w', level=logging.DEBUG, format='%(asctime)s:%(levelname)s:%(message)s', datefmt='%Y-%m-%dT%H:%M:%S' )
 
 	def scrape( self ):
 
@@ -55,7 +55,7 @@ class Scraper:
 		postMessage( 'robot_comms', 'Starting crawler ' + self.name )
 
 		#todo this needs to be split up functionally with better error handling
-		logger = logging.getLogger(__name__ + ':' + self.name)
+		logger = logging.getLogger( __name__ )
 
 		process = CrawlerProcess({
 		    'USER_AGENT'           : getUserAgent(),
@@ -96,22 +96,24 @@ class Scraper:
 
 		#write stats to file
 		results                  = {}
-		results['removedLength'] = len ( removed ) 
-		results['removedList']   = removed
 		results['addedLength']   = len ( added ) 
 		results['addedList']     = added
+		results['removedLength'] = len ( removed ) 
+		results['removedList']   = removed
 
 		logging.debug( 'results = ' + str( results ) )
 
 		#save results
 		self.resultsOutputFileName = self.resultsOutputFileName + '_' + now + '.json'
-		with open( self.resultsOutputFileName, 'w') as outfile:
-		    json.dump( results, outfile )
+		with open( self.resultsOutputFileName, 'w') as outFile:
+			logging.debug( 'saving ' + self.resultsOutputFileName )
+		    json.dump( results, outFile )
 
 		#post to slack
-		#if not self.productLink:
-			#postResultsToSlackChannel( results, self.slackChannel ) 
-		#else:
-			#postResultsToSlackChannelWithLink( results, self.productLink, self.slackChannel ) 
+		if not self.productLink:
+			postResultsToSlackChannel( results, self.slackChannel ) 
+		else:
+			postResultsToSlackChannelWithLink( results, self.productLink, self.slackChannel ) 
+
 		ar = 'Added: ' + str( len ( added ) ) + ', Removed: ' + str( len ( removed ) )
 		postMessage( 'robot_comms', 'Finished crawler ' + self.name + ', '+ ar + ', time taken = ' + str( timedelta( seconds=( time.time()-startTime ) ) ) )
