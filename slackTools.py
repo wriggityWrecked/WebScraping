@@ -64,7 +64,7 @@ def postMessage( channel, message ):
 	with open( './slackToken' ) as f:  
 		slackToken = str( f.read() ).strip()
 
-	sc = SlackClient(slackToken.strip())
+	sc = SlackClient( slackToken.strip() )
 
 	#check if token is empty
 	if not sc:

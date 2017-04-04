@@ -12,6 +12,7 @@ from slackTools         import *
 from getRandomUserAgent import * 
 
 class Scraper:
+	
 	'Base class for all scrapers'
 
 	def __init__( self, name, spider, productLink, slackChannel ):
@@ -51,7 +52,7 @@ class Scraper:
 	def scrape( self ):
 
 		startTime = time.time()
-		postMessage( 'botinfo', 'starting crawler ' + self.name )
+		postMessage( 'robot_comms', 'Starting crawler ' + self.name )
 
 		#todo this needs to be split up functionally with better error handling
 		logger = logging.getLogger(__name__ + ':' + self.name)
@@ -108,9 +109,9 @@ class Scraper:
 		    json.dump( results, outfile )
 
 		#post to slack
-		if not self.productLink:
-			postResultsToSlackChannel( results, self.slackChannel ) 
-		else:
-			postResultsToSlackChannelWithLink( results, self.productLink, self.slackChannel ) 
-
-		postMessage( 'botinfo', 'finished crawler ' + self.name + ', time taken = ' + str( timedelta( seconds=( time.time()-startTime ) ) ) )
+		#if not self.productLink:
+			#postResultsToSlackChannel( results, self.slackChannel ) 
+		#else:
+			#postResultsToSlackChannelWithLink( results, self.productLink, self.slackChannel ) 
+		ar = 'Added: ' + str( len ( added ) ) + ', Removed: ' + str( len ( removed ) )
+		postMessage( 'robot_comms', 'Finished crawler ' + self.name + ', '+ ar + ', time taken = ' + str( timedelta( seconds=( time.time()-startTime ) ) ) )
