@@ -107,7 +107,7 @@ class Scraper:
 		self.resultsOutputFileName = self.resultsOutputFileName + '_' + now + '.json'
 		with open( self.resultsOutputFileName, 'w') as outFile:
 			logging.debug( 'saving ' + self.resultsOutputFileName )
-		    json.dump( results, outFile )
+			json.dump( results, outFile )
 
 		#post to slack
 		if not self.productLink:
