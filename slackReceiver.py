@@ -1,6 +1,7 @@
 from slackclient import SlackClient
 from datetime    import timedelta
 from subprocess  import *
+from websocket   import *
 import time
 import traceback
 
@@ -108,7 +109,7 @@ def main():
 									text = response['text']
 
 								replyText = handleText( text )
-								sendReply( sc, ts, response['channel'], replyText )
+								sendReply( sc, ts, response['channel'], 'slackReceiver: ' + replyText )
 
 						else:
 							print 'ignoring stale response, elapsedTimeSeconds=' + str( timedelta( seconds=( elapsedTimeSeconds ) ) )
@@ -126,6 +127,8 @@ def main():
 	except WebSocketConnectionClosedException:
 		print 'WebSocketConnectionClosedException, retrying'
 		sc.rtm_connect()
+	except:
+		print 'something bad ' + e.message 
 
 if __name__ == "__main__":
 	main()
