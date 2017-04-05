@@ -67,19 +67,20 @@ def main():
 	sc = SlackClient(slackToken.strip())
 
 	if sc.rtm_connect():
+		attemptCount = 0
 
-	    while True:
+		while True:
 
-	        r = sc.rtm_read()
-	        print str( time.time() ) + ' ' + str( r )
+			r = sc.rtm_read()
+			print str( time.time() ) + ' ' + str( r )
 
-	        #check time, if it's the time delta is greater than our polling then       
-	        if len( r ) > 0:
-	        	
-	        	response = r[0]
-	        	#check for relevant time key
+			#check time, if it's the time delta is greater than our polling then       
+			if len( r ) > 0:
+				attemptCount = 0
+				response     = r[0]
+				#check for relevant time key
 
-	        	if 'ts' in response:
+				if 'ts' in response:
 					
 					ts                 = response['ts'] 
 					elapsedTimeSeconds = time.time() - float( ts )
@@ -94,7 +95,7 @@ def main():
 							gc = False
 
 						gu = True
-				 		if 'user' not in response or response['user'] != dbId:
+						if 'user' not in response or response['user'] != dbId:
 							print 'unexpected user'
 							gc = False
 
@@ -110,9 +111,15 @@ def main():
 					else:
 						print 'ignoring stale response, elapsedTimeSeconds=' + str( timedelta( seconds=( elapsedTimeSeconds ) ) )
 
-	        time.sleep( sleepTimeSeconds )
+			if not r and attemptCount > 10:
+				time.sleep( sleepTimeSeconds )
+				attemptCount = 0
+			else:
+				time.sleep( 1 )
+				attemptCount += 1
+
 	else:
-	    print "Connection Failed, invalid token?"
+		print "Connection Failed, invalid token?"
 
 if __name__ == "__main__":
 	main()
