@@ -127,7 +127,7 @@ def main():
 	except WebSocketConnectionClosedException:
 		print 'WebSocketConnectionClosedException, retrying'
 		sc.rtm_connect()
-	except:
+	except Exception as e:
 		print 'something bad ' + e.message 
 
 if __name__ == "__main__":
