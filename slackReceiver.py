@@ -66,60 +66,66 @@ def main():
 
 	sc = SlackClient(slackToken.strip())
 
-	if sc.rtm_connect():
-		attemptCount = 0
+	try:
+		if sc.rtm_connect():
 
-		while True:
+			attemptCount = 0
 
-			r = sc.rtm_read()
-			print str( time.time() ) + ' ' + str( r )
+			while True:
 
-			#check time, if it's the time delta is greater than our polling then       
-			if len( r ) > 0:
-				attemptCount = 0
-				response     = r[0]
-				#check for relevant time key
+				r = sc.rtm_read()
+				print str( time.time() ) + ' ' + str( r )
 
-				if 'ts' in response:
-					
-					ts                 = response['ts'] 
-					elapsedTimeSeconds = time.time() - float( ts )
-					
-					if elapsedTimeSeconds < allowableTimeDeltaSeconds:
-						#we can respond
-						#now handle it
-						#check user and channel
-						gc = True
-						if 'channel' not in response or response['channel'] != commandChannel: 
-							print 'unexpected channel'
-							gc = False
+				#check time, if it's the time delta is greater than our polling then       
+				if len( r ) > 0:
+					attemptCount = 0
+					response     = r[0]
+					#check for relevant time key
 
-						gu = True
-						if 'user' not in response or response['user'] != dbId:
-							print 'unexpected user'
-							gc = False
+					if 'ts' in response:
+						
+						ts                 = response['ts'] 
+						elapsedTimeSeconds = time.time() - float( ts )
+						
+						if elapsedTimeSeconds < allowableTimeDeltaSeconds:
+							#we can respond
+							#now handle it
+							#check user and channel
+							gc = True
+							if 'channel' not in response or response['channel'] != commandChannel: 
+								print 'unexpected channel'
+								gc = False
 
-						if gu and gc:
-							#get the message
-							text = ''
-							if 'text' in response:
-								text = response['text']
+							gu = True
+							if 'user' not in response or response['user'] != dbId:
+								print 'unexpected user'
+								gc = False
 
-							replyText = handleText( text )
-							sendReply( sc, ts, response['channel'], replyText )
+							if gu and gc:
+								#get the message
+								text = ''
+								if 'text' in response:
+									text = response['text']
 
-					else:
-						print 'ignoring stale response, elapsedTimeSeconds=' + str( timedelta( seconds=( elapsedTimeSeconds ) ) )
+								replyText = handleText( text )
+								sendReply( sc, ts, response['channel'], replyText )
 
-			if not r and attemptCount > 10:
-				time.sleep( sleepTimeSeconds )
-				attemptCount = 0
-			else:
-				time.sleep( 1 )
-				attemptCount += 1
+						else:
+							print 'ignoring stale response, elapsedTimeSeconds=' + str( timedelta( seconds=( elapsedTimeSeconds ) ) )
 
-	else:
-		print "Connection Failed, invalid token?"
+				if not r and attemptCount > 10:
+					time.sleep( sleepTimeSeconds )
+					attemptCount = 0
+				else:
+					time.sleep( 1 )
+					attemptCount += 1
+
+		else:
+			print "Connection Failed, invalid token?"
+
+	except WebSocketConnectionClosedException:
+		print 'WebSocketConnectionClosedException, retrying'
+		sc.rtm_connect()
 
 if __name__ == "__main__":
 	main()
