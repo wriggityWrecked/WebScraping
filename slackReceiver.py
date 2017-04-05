@@ -67,12 +67,12 @@ def main():
 
 	sc = SlackClient(slackToken.strip())
 
-	try:
-		if sc.rtm_connect():
+	if sc.rtm_connect():
 
-			attemptCount = 0
+		attemptCount = 0
 
-			while True:
+		while True:
+			try:
 
 				r = sc.rtm_read()
 				print str( time.time() ) + ' ' + str( r )
@@ -109,7 +109,8 @@ def main():
 									text = response['text']
 
 								replyText = handleText( text )
-								sendReply( sc, ts, response['channel'], 'slackReceiver: ' + replyText )
+								if not replyText:
+									sendReply( sc, ts, response['channel'], 'slackReceiver: ' + replyText )
 
 						else:
 							print 'ignoring stale response, elapsedTimeSeconds=' + str( timedelta( seconds=( elapsedTimeSeconds ) ) )
@@ -121,14 +122,17 @@ def main():
 					time.sleep( 1 )
 					attemptCount += 1
 
+			except WebSocketConnectionClosedException:
+				print 'WebSocketConnectionClosedException, retrying'
+				sc.rtm_connect()
+			except Exception as e:
+				print 'something bad!'
+				print e.message
+				return  'Caught ' + e.message
+				traceback.print_exc()
+
 		else:
 			print "Connection Failed, invalid token?"
-
-	except WebSocketConnectionClosedException:
-		print 'WebSocketConnectionClosedException, retrying'
-		sc.rtm_connect()
-	except Exception as e:
-		print 'something bad ' + e.message 
 
 if __name__ == "__main__":
 	main()
