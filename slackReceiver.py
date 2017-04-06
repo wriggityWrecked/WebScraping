@@ -4,28 +4,52 @@ from subprocess  import *
 from websocket   import *
 import time
 import traceback
+import sys
+import scrapeKnl
+import scrapeEtre
+import threading
 
-commandKey     = 'bash'
-commandChannel = 'C4UC35TLN'
-dbId           = 'U4SDBCXBJ'
+commandKey        = 'bash'
+commandChannel    = 'C4UC35TLN'
+dbId              = 'U4SDBCXBJ'
+debugSlackChannel = 'robot_comms'
+scrapeKey         = 'scrape'
+knlScrapeKey      = 'knl'
+etreScrapeKey     = 'etre'
+#todo help key / list commands
 
-def handleText( text ):
-	print 'handleText: ' + text
+#todo need logging
+
+#todo global thread dictionary to keep track of manual scrapes
+
+def handleText( text, channel, user ):
+
+	print 'handleText: ' + text + ' ' + channel + ' ' + user
 
 	if not text:
 		print 'ignoring empty message'
 		return ''
 
-	#todo, handle anything else?
+	if 'who knows' in text:
+		return 'Jeff knows.'
 
-	if commandKey not in text:
-		print 'message does not contain a command'
+	#split on spaces and grab the first word
+	key = text.split(" ")
+	if  len( key ) == 0:
+		print 'empty key!'
 		return ''
 
-	splitCommand = text.split( commandKey + " " )
-	print splitCommand
-	if len( splitCommand ) >= 2:
-		return handleCommand( splitCommand[1] )
+	key = key[0]
+	print key
+	#handle scraping
+	if key.lower() == scrapeKey.lower():
+		
+		return handleScrape( text.replace( scrapeKey + " ", "" ) )
+
+	#handle commands
+	if key.lower() == commandKey.lower():
+
+		return handleCommand( text.replace( commandKey + " ", "" ) )
 
 	return ''
 
@@ -33,26 +57,49 @@ def handleCommand( command ):
 	print 'handleCommand: ' + str( command )
 
 	try:
-		p = Popen( command, shell=True, stdout=PIPE )
+
+		p              = Popen( command, shell=True, stdout=PIPE )
 		stdout, stderr = p.communicate()
+		
 		print stdout
 		print stderr
+
 		return str( stdout ) + '\n' + str( stderr )
 
 	except Exception as e:
-		print 'something bad!'
-		print e.message
-		return  'Caught ' + e.message
-		traceback.print_exc()
+		exc_type, exc_value, tb = sys.exc_info()
+		return False, 'Caught ' + str( traceback.format_exception( exc_type, exc_value, tb ) ) 
 
-def sendReply(sc, ts, channelId, replyText ):
-	print channelId
+def handleScrape( command ):
+
+	print 'handleScrape: ' + command
+
+	if command.lower() == knlScrapeKey.lower():
+
+		t = threading.Thread( target=scrapeKnl.main, args=() )
+		t.daemon = True
+		t.start()
+
+		return 'Acknowledged command, started manual KnL scraping'
+
+	if command.lower() == etreScrapeKey.lower():
+
+		t = threading.Thread( target=scrapeEtre.main, args=() )
+		t.daemon = True
+		t.start()
+
+		return 'Acknowledged command, started manual Etre scraping'
+
+
+def sendReply( sc, ts, channelId, replyText ):
+
+	print ts + ' ' + channelId + ' ' + replyText
 
 	output = sc.api_call(
 	  'chat.postMessage',
+	  ts         = ts,
 	  channel    = channelId,
-	  text       = replyText,
-	  ts         = ts
+	  text       = replyText
 	)
 	print output
 
@@ -65,13 +112,14 @@ def main():
 	with open( './slackToken' ) as f:  
 		slackToken = str( f.read() ).strip()
 
-	sc = SlackClient(slackToken.strip())
+	sc = SlackClient( slackToken.strip() )
 
 	if sc.rtm_connect():
 
-		attemptCount = 0
+		keepAliveCount = 0
 
 		while True:
+
 			try:
 
 				r = sc.rtm_read()
@@ -89,47 +137,45 @@ def main():
 						elapsedTimeSeconds = time.time() - float( ts )
 						
 						if elapsedTimeSeconds < allowableTimeDeltaSeconds:
-							#we can respond
-							#now handle it
-							#check user and channel
-							gc = True
-							if 'channel' not in response or response['channel'] != commandChannel: 
-								print 'unexpected channel'
-								gc = False
 
-							gu = True
-							if 'user' not in response or response['user'] != dbId:
-								print 'unexpected user'
-								gc = False
-
-							if gu and gc:
+							if 'channel' in response and 'user' in response:
 								#get the message
 								text = ''
 								if 'text' in response:
 									text = response['text']
 
-								replyText = handleText( text )
-								if not replyText:
-									sendReply( sc, ts, response['channel'], 'slackReceiver: ' + replyText )
+								replyText = handleText( text, response['channel'], response['user'] )
+
+								if replyText:
+									sendReply( sc, ts, response['channel'], replyText )
+								else:
+									print 'replyText is empty!'
+
+							if 'channel' not in response:
+								print 'No Channel in response!'
+
+							if 'user' not in response:
+								print 'No user in response!'
 
 						else:
 							print 'ignoring stale response, elapsedTimeSeconds=' + str( timedelta( seconds=( elapsedTimeSeconds ) ) )
 
-				if not r and attemptCount > 10:
+				if not r and keepAliveCount > 10:
 					time.sleep( sleepTimeSeconds )
-					attemptCount = 0
+					keepAliveCount = 0
 				else:
 					time.sleep( 1 )
-					attemptCount += 1
+					keepAliveCount += 1
 
 			except WebSocketConnectionClosedException:
-				print 'WebSocketConnectionClosedException, retrying'
+				exc_type, exc_value, tb = sys.exc_info()
+				print 'Caught ' + str( traceback.format_exception( exc_type, exc_value, tb ) )
+				#try to re-connect
 				sc.rtm_connect()
+
 			except Exception as e:
-				print 'something bad!'
-				print e.message
-				return  'Caught ' + e.message
-				traceback.print_exc()
+				exc_type, exc_value, tb = sys.exc_info()
+				print 'Caught ' + str( traceback.format_exception( exc_type, exc_value, tb ) ) 
 
 		else:
 			print "Connection Failed, invalid token?"

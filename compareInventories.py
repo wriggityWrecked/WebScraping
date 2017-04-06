@@ -8,10 +8,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 def compareMap( oldMap, newMap ):
-
-	#print str ( len( oldMap ) ) 
-	#print str ( len( newMap ) ) 
-
+	
 	removedEntries = {}
 	newEntries     = {}
 
