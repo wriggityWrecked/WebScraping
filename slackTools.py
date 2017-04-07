@@ -7,6 +7,7 @@ import subprocess
 logger = logging.getLogger(__name__)
 
 #so far link format only really works for prepend
+#this belongs in scraper
 def constructSlackMessageWithLink( resultsDictionary, linkFormat ):
 
 	#minimum looks like

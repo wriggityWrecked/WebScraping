@@ -1,18 +1,20 @@
 import scrapy
-import os
 import datetime
 import json
 import logging
 import time
 import traceback
 import sys
+import os
 import getRandomUserAgent
 from datetime           import timedelta
 from pprint             import pprint
 from scrapy.crawler     import CrawlerProcess
 from compareInventories import *
 from slackTools         import *
-
+from twisted.internet   import reactor
+from scrapy.crawler     import CrawlerRunner
+from scrapy.utils.log   import configure_logging
 
 debugSlackChannel = 'robot_comms'
 
@@ -22,42 +24,45 @@ class Scraper:
 
 	def __init__( self, name, spider, productLink, slackChannel ):
 
+		nowString = datetime.datetime.now().strftime( "%Y-%m-%dT%H:%M:%S" )
+
 		#name of the scraper
-		self.name                  = name
+		self.name = name
 		
 		#spider object
-		self.spider                = spider
+		self.spider = spider
 		
 		#link to use to append to an ID, todo need to make a rich object as links are page specific
 		#either specify or leave blank
-		self.productLink           = productLink
+		self.productLink = productLink
 		
 		#slack channel name used to post results                
-		self.slackChannel          = slackChannel   
+		self.slackChannel = slackChannel   
 		
 		#base directory of scraper results
-		baseDirectory              = './' + name
+		baseDirectory = './' + name
 		
 		#archive directory of scraper results
-		self.archiveDirectory      = baseDirectory         + '/' + datetime.datetime.now().strftime( "%Y-%m")   
+		self.archiveDirectory = baseDirectory         + '/' + datetime.datetime.now().strftime( "%Y-%m")   
 		
-		#file name to dump Spider JSON output  
-		self.newFileName           = baseDirectory         + '/' + 'new_' + name + 'Result.json'
+		#file name to dump Spider JSON output
+		#timestamp in case of failures  
+		self.newFileName = baseDirectory         + '/' + 'new_' + name + 'Result_' + nowString + '.json'
 		
 		#file name to keep as inventory file: used for all new vs old comparisons
-		self.inventoryFileName     = baseDirectory         + '/' + name + 'BeerInventory.json'
+		self.inventoryFileName = baseDirectory         + '/' + name + 'BeerInventory.json'
 		
 		#file name for comparison results
 		self.resultsOutputFileName = self.archiveDirectory + '/' + 'results_' + name + 'Beer' #append time and .json later
 		
 		#file name for old inventory data
-		self.rotatedFileName       = self.archiveDirectory + '/' + 'old_' + name + '_'        #append time and .json later
+		self.rotatedFileName = self.archiveDirectory + '/' + 'old_' + name + '_'        #append time and .json later
 		
 		#logging directory for this scraper
-		logDirectory               = baseDirectory         + '/' + 'log' 
+		logDirectory = baseDirectory         + '/' + 'log' 
 		
 		#log name each time run is called
-		logName                    = logDirectory          + '/' + name + '_' + datetime.datetime.now().strftime( "%Y-%m-%dT%H:%M:%S" ) + '.log'
+		logName = logDirectory          + '/' + name + '_' + nowString + '.log'
 
 		self.checkAndSetupDirectories( baseDirectory, logDirectory )
 
@@ -86,34 +91,54 @@ class Scraper:
 			logging.info( 'creating ' + logDirectory )
 			os.makedirs( logDirectory )
 
+		#check if a results file exists (it shouldn't if properly rotated)
+		#shouldn't be possible now with timestamp
+		if os.path.isfile( self.newFileName ):
+			logging.warn( self.newFileName + ' + already exists!' )
+
 
 	def runSpider( self ):
 		"""
 		Rather than using scrapyd or executing the spider manually via scrapy,
-		this method creates a CrawlerProcess and runs the spider provided at
+		this method creates a CrawlerRunnerand runs the spider provided at
 		construction. 
+
+		https://doc.scrapy.org/en/latest/topics/practices.html#run-from-script
+		http://twistedmatrix.com/trac/wiki/FrequentlyAskedQuestions#Igetexceptions.ValueError:signalonlyworksinmainthreadwhenItrytorunmyTwistedprogramWhatswrong
 		"""
 		try:
 			self.startTime = time.time()
 			
 			#post debug message to slack
-			postMessage( debugSlackChannel, 'Starting crawler ' + self.name )
-
-			process = CrawlerProcess({
-			    'USER_AGENT'           : getRandomUserAgent.getUserAgent(),
+			postMessage( debugSlackChannel, 'Starting scraper ' + self.name )
+			configure_logging( {'LOG_FORMAT': '%(levelname)s: %(message)s'} )
+			runner = CrawlerRunner({
+				'USER_AGENT'           : getRandomUserAgent.getUserAgent(),
 				'FEED_FORMAT'          : 'json',
 				'FEED_URI'             : self.newFileName,
 				'AUTOTHROTTLE_ENABLED' : 'True'
 			})
 
-			process.crawl( self.spider )
-			process.start() # the script will block here until the crawling is finished
+			d = runner.crawl( self.spider )
+			d.addBoth( lambda _: reactor.stop() )
+
+			reactor.run( installSignalHandlers=0 ) # the script will block here until the crawling is finished
+
+			# process = CrawlerProcess({
+			# 	'USER_AGENT'           : getRandomUserAgent.getUserAgent(),
+			# 	'FEED_FORMAT'          : 'json',
+			# 	'FEED_URI'             : self.newFileName,
+			# 	'AUTOTHROTTLE_ENABLED' : 'True'
+			# })
+
+			# process.crawl( self.spider )
+			# process.start() # the script will block here until the crawling is finished
 
 			return True, None
 
 		except Exception as e:
-			exc_type, exc_value = sys.exc_info()[:2]
-			return False, 'Caught ' + str( traceback.format_exception_only( exc_type, exc_value ) ) 
+			exc_type, exc_value, exec_tb = sys.exc_info()
+			return False, 'Caught ' + str( traceback.format_exception( exc_type, exc_value, exec_tb ) ) 
 
 
 	def processSpiderResults( self ):
@@ -144,6 +169,7 @@ class Scraper:
 				return False, reason
 
 			#Both files exist, OK to compare
+			logging.debug( 'compareInventories( ' + self.inventoryFileName + ", " + self.newFileName + " )")
 			removed, added = compareInventories( self.inventoryFileName, self.newFileName )
 
 			#debug printing
@@ -176,8 +202,8 @@ class Scraper:
 			return True, results
 
 		except Exception as e:
-			exc_type, exc_value = sys.exc_info()[:2]
-			return False, 'Caught ' + str( traceback.format_exception_only( exc_type, exc_value ) ) 
+			exc_type, exc_value, exec_tb = sys.exc_info()
+			return False, 'Caught ' + str( traceback.format_exception( exc_type, exc_value, exec_tb ) ) 
 
 
 	def postToSlack( self, results, slackChannel ):
@@ -200,18 +226,19 @@ class Scraper:
 			return True, None
 
 		except Exception:
-			exc_type, exc_value = sys.exc_info()[:2]
-			return False, 'Caught ' + str( traceback.format_exception_only( exc_type, exc_value ) ) 
+			exc_type, exc_value, exec_tb = sys.exc_info()
+			return False, 'Caught ' + str( traceback.format_exception( exc_type, exc_value, exec_tb ) ) 
 
 	def reportErrorsToSlack( self, errorMessage ):
+
 		try:
 
 			postMessage( debugSlackChannel, errorMessage )
 			return True, None
 
 		except Exception:
-			exc_type, exc_value = sys.exc_info()[:2]
-			return False, 'Caught ' + str( traceback.format_exception_only( exc_type, exc_value ) ) 
+			exc_type, exc_value, exec_tb = sys.exc_info()
+			return False, 'Caught ' + str( traceback.format_exception( exc_type, exc_value, exec_tb ) ) 
 
 	def run( self ):
 		"""
@@ -227,7 +254,7 @@ class Scraper:
 			errorMessage = 'runSpider failed! ' + message 
 			logger.error( errorMessage )
 			self.reportErrorsToSlack( errorMessage )
-			return
+			return False, errorMessage
 
 		#Now attempt to obtain results
 		success, results = self.processSpiderResults()
@@ -236,11 +263,13 @@ class Scraper:
 			errorMessage = 'processSpiderResults failed! ' + results 
 			logger.error( errorMessage )
 			self.reportErrorsToSlack( errorMessage )
-			return
+			return False, errorMessage
 
 		#post the results to slack	
 		success, message = self.postToSlack( results, self.slackChannel )
 
 		if not success:
 			logger.error( 'postToSlack failed! ' + message )
-			return
+			return False, errorMessage
+
+		return True, results
