@@ -2,30 +2,10 @@ todo
 
  - don't be stupid, three scraping scripts can be turned into a single function + script
 
- - logging
- 	- most recent log is symlinked
- 	- each project should have its own folder
- 	- each project log should have its own folder
- 	- each log should be organized by month
-
- - send email
-	- get email setup via python / or command line
-	- need gmail account for the pi - need name
-
- - schedule python scrape scripts as chron jobs
-
- - setup raspberry PI
-	- document everything
-  	- need python scrapy and ssl
-
  - make a front facing site to load the JSON data
  	- maybe DJANGO?
 
 ================
 
-todo KnL beer spider for pre arrival, need in-stock  / pre-arrival tags per element
-
-	http://www.klwines.com/Products/r?r=4294956886%2B81&o=0&z=False
 
 todo canilltion store spider
-toto artisan wine?

@@ -7,6 +7,8 @@ import traceback
 import sys
 import os
 import getRandomUserAgent
+import threading
+from enum               import Enum
 from datetime           import timedelta
 from pprint             import pprint
 from scrapy.crawler     import CrawlerProcess
@@ -18,13 +20,26 @@ from scrapy.utils.log   import configure_logging
 
 debugSlackChannel = 'robot_comms'
 
+class ScraperStage(Enum):
+
+	INITIALIZED        = 1
+	RUNNING            = 2
+	RUNNING_SPIDER     = 3
+	PROCESSING_RESULTS = 4
+	POSTING_RESULTS    = 5
+	FINISHED           = 6
+	TERMINATED_ERROR   = 7
+
 class Scraper:
 
 	'Base class for all scrapers'
 
 	def __init__( self, name, spider, productLink, slackChannel ):
+		print 'init'
+		self.stageLock = threading.Lock()
 
-		nowString = datetime.datetime.now().strftime( "%Y-%m-%dT%H:%M:%S" )
+		self.stage     = ScraperStage.INITIALIZED
+		nowString      = datetime.datetime.now().strftime( "%Y-%m-%dT%H:%M:%S" )
 
 		#name of the scraper
 		self.name = name
@@ -43,26 +58,26 @@ class Scraper:
 		baseDirectory = './' + name
 		
 		#archive directory of scraper results
-		self.archiveDirectory = baseDirectory         + '/' + datetime.datetime.now().strftime( "%Y-%m")   
+		self.archiveDirectory = baseDirectory + '/' + datetime.datetime.now().strftime( "%Y-%m")   
 		
 		#file name to dump Spider JSON output
 		#timestamp in case of failures  
-		self.newFileName = baseDirectory         + '/' + 'new_' + name + 'Result_' + nowString + '.json'
+		self.newFileName = baseDirectory + '/' + 'new_' + name + 'Result_' + nowString + '.json'
 		
 		#file name to keep as inventory file: used for all new vs old comparisons
-		self.inventoryFileName = baseDirectory         + '/' + name + 'BeerInventory.json'
+		self.inventoryFileName = baseDirectory + '/' + name + 'BeerInventory.json'
 		
 		#file name for comparison results
 		self.resultsOutputFileName = self.archiveDirectory + '/' + 'results_' + name + 'Beer' #append time and .json later
 		
 		#file name for old inventory data
-		self.rotatedFileName = self.archiveDirectory + '/' + 'old_' + name + '_'        #append time and .json later
+		self.rotatedFileName = self.archiveDirectory + '/' + 'old_' + name + '_'              #append time and .json later
 		
 		#logging directory for this scraper
-		logDirectory = baseDirectory         + '/' + 'log' 
+		logDirectory = baseDirectory + '/' + 'log' 
 		
 		#log name each time run is called
-		logName = logDirectory          + '/' + name + '_' + nowString + '.log'
+		logName = logDirectory + '/' + name + '_' + nowString + '.log'
 
 		self.checkAndSetupDirectories( baseDirectory, logDirectory )
 
@@ -74,6 +89,28 @@ class Scraper:
 
 		#initialize
 		self.startTime = 0
+		print 'init'
+
+	def setStage( self, newStage ):
+		
+		with self.stageLock:
+			print 'setting stage to ' + str( newStage )
+			self.stage = newStage
+
+	def __str__( self ):
+
+		string = "Stage=" + str( self.stage )
+
+		if self.startTime != 0:
+
+			if self.stage == ScraperStage.FINISHED:
+				string += ", Finished "
+			else:
+				string += ", Started "
+
+			string += str( timedelta( seconds=( time.time() - self.startTime ) ) ) + " ago."
+
+		return string
 
 	def checkAndSetupDirectories( self, baseDirectory, logDirectory ):
 
@@ -107,8 +144,9 @@ class Scraper:
 		http://twistedmatrix.com/trac/wiki/FrequentlyAskedQuestions#Igetexceptions.ValueError:signalonlyworksinmainthreadwhenItrytorunmyTwistedprogramWhatswrong
 		"""
 		try:
+			self.setStage( ScraperStage.RUNNING_SPIDER )
 			self.startTime = time.time()
-			
+
 			#post debug message to slack
 			postMessage( debugSlackChannel, 'Starting scraper ' + self.name )
 			configure_logging( {'LOG_FORMAT': '%(levelname)s: %(message)s'} )
@@ -138,7 +176,7 @@ class Scraper:
 
 		except Exception as e:
 			exc_type, exc_value, exec_tb = sys.exc_info()
-			return False, 'Caught ' + str( traceback.format_exception( exc_type, exc_value, exec_tb ) ) 
+			return False, 'Caught ' + str( "".join( traceback.format_exception( exc_type, exc_value, exec_tb ) ) ) 
 
 
 	def processSpiderResults( self ):
@@ -151,6 +189,8 @@ class Scraper:
 		"""
 
 		try:
+			self.setStage( ScraperStage.PROCESSING_RESULTS )
+
 			#Crawling must be successful or the new file and inventory files
 			#must exist as this point
 			if not os.path.isfile( self.newFileName ):
@@ -203,7 +243,7 @@ class Scraper:
 
 		except Exception as e:
 			exc_type, exc_value, exec_tb = sys.exc_info()
-			return False, 'Caught ' + str( traceback.format_exception( exc_type, exc_value, exec_tb ) ) 
+			return False, 'Caught ' + str( "".join( traceback.format_exception( exc_type, exc_value, exec_tb ) ) ) 
 
 
 	def postToSlack( self, results, slackChannel ):
@@ -212,6 +252,9 @@ class Scraper:
 		"""
 
 		try:
+
+			self.setStage( ScraperStage.POSTING_RESULTS )
+
 			#post to slack
 			if not self.productLink:
 				postResultsToSlackChannel( results, slackChannel ) 
@@ -227,7 +270,7 @@ class Scraper:
 
 		except Exception:
 			exc_type, exc_value, exec_tb = sys.exc_info()
-			return False, 'Caught ' + str( traceback.format_exception( exc_type, exc_value, exec_tb ) ) 
+			return False, 'Caught ' + str( "".join( traceback.format_exception( exc_type, exc_value, exec_tb ) ) ) 
 
 	def reportErrorsToSlack( self, errorMessage ):
 
@@ -238,13 +281,15 @@ class Scraper:
 
 		except Exception:
 			exc_type, exc_value, exec_tb = sys.exc_info()
-			return False, 'Caught ' + str( traceback.format_exception( exc_type, exc_value, exec_tb ) ) 
+			return False, 'Caught ' + str( "".join( traceback.format_exception( exc_type, exc_value, exec_tb ) ) ) 
 
 	def run( self ):
 		"""
 		Main workhorse method of the class. It creates and runs the spider, compares new file output to stored inventory,
 		processes and saves results, and then posts to the appropriate Slack channel. 
 		"""
+		print 'run'
+		self.setStage( ScraperStage.RUNNING )
 
 		#Psh whatever google style guide, I'll describe what I want.
 		#Before you can walk, you must first crawl.
@@ -254,6 +299,7 @@ class Scraper:
 			errorMessage = 'runSpider failed! ' + message 
 			logger.error( errorMessage )
 			self.reportErrorsToSlack( errorMessage )
+			self.setStage( ScraperStage.TERMINATED_ERROR )
 			return False, errorMessage
 
 		#Now attempt to obtain results
@@ -263,6 +309,7 @@ class Scraper:
 			errorMessage = 'processSpiderResults failed! ' + results 
 			logger.error( errorMessage )
 			self.reportErrorsToSlack( errorMessage )
+			self.setStage( ScraperStage.TERMINATED_ERROR )
 			return False, errorMessage
 
 		#post the results to slack	
@@ -270,6 +317,8 @@ class Scraper:
 
 		if not success:
 			logger.error( 'postToSlack failed! ' + message )
+			self.setStage( ScraperStage.TERMINATED_ERROR )
 			return False, errorMessage
 
+		self.setStage( ScraperStage.FINISHED )
 		return True, results

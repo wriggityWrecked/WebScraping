@@ -7,6 +7,7 @@ import traceback
 import sys
 import scrapeKnl
 import scrapeEtre
+import scrapeBelgianHappiness
 import threading
 
 commandKey        = 'bash'
@@ -14,9 +15,9 @@ commandChannel    = 'C4UC35TLN'
 dbId              = 'U4SDBCXBJ'
 debugSlackChannel = 'robot_comms'
 scrapeKey         = 'scrape'
-scrapeOptionsMap  = {'knl' : scrapeKnl.main, 'etre' : scrapeEtre.main}
+scrapeOptionsMap  = { 'knl' : scrapeKnl, 'etre' : scrapeEtre, 'bh' : scrapeBelgianHappiness }
 helpKey           = 'help'
-maxKeepAlive      = 30
+maxKeepAlive      = 60
 #todo help key / list commands
 
 #todo need logging
@@ -102,20 +103,27 @@ def handleCommand( command ):
 
 	except Exception as e:
 		exc_type, exc_value, exc_tb = sys.exc_info()
-		return False, 'Caught ' + str( traceback.format_exception( exc_type, exc_value, exc_tb ) ) 
+		return False, 'Caught ' + str( "".join( traceback.format_exception( exc_type, exc_value, exc_tb ) ) )
 
 def handleScrape( command ):
 
 	print 'handleScrape: ' + command
 
 	if command.lower() in scrapeOptionsMap:
+		
+		target = scrapeOptionsMap[ command.lower() ]
 
-		target   = scrapeOptionsMap[ command.lower() ]
-		t        = threading.Thread( target=target, args=() )
-		t.daemon = True
-		t.start()
+		#check if already running
+		if not getattr( target, 'isRunning')():
+			#not foolproof, someone might have beat us to the punch
+			#todo hang onto the thread to kill if taking too long, etc
+			t = threading.Thread( target=getattr( target, 'run' ), args=() )
+			#t.daemon = True
+			t.start()
 
-		return 'Acknowledged command, started manual ' + command + ' scraping'
+			return 'Acknowledged command, started manual ' + command + ' scraping'
+		else:
+			return 'Already running ' + str( target ) + '.\nPlease wait for completion.'
 
 	#invalid scrape option
 	return "Invalid scrape option: " + command + '\nAvailable options: ' + ', '.join( scrapeOptionsMap.keys() )
@@ -203,13 +211,13 @@ def main():
 
 			except WebSocketConnectionClosedException:
 				exc_type, exc_value, exc_tb = sys.exc_info()
-				print 'Caught ' + str( traceback.format_exception( exc_type, exc_value, exc_tb ) )
+				print 'Caught WebSocketConnectionClosedException:' + str( "".join( traceback.format_exception( exc_type, exc_value, exc_tb ) ) 
 				#try to re-connect
 				sc.rtm_connect()
 
 			except Exception as e:
 				exc_type, exc_value, exc_tb = sys.exc_info()
-				print 'Caught ' + str( traceback.format_exception( exc_type, exc_value, exc_tb ) ) 
+				print 'Caught ' + str( "".join( traceback.format_exception( exc_type, exc_value, exc_tb ) ) 
 
 		else:
 			print "Connection Failed, invalid token?"
