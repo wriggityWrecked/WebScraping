@@ -23,7 +23,8 @@ dbId              = 'U4SDBCXBJ'
 debugSlackChannel = 'robot_comms'
 scrapeKey         = 'scrape'
 scrapeOptionsMap  = { 'knl' : scrapeKnl, 'etre' : scrapeEtre, 'bh' : scrapeBelgianHappiness, 'biab' : scrapeBiab }
-helpKey           = 'help'
+helpKey1          = 'help'
+helpKey2          = '?'
 maxKeepAlive      = 60
 #todo help key / list commands
 
@@ -81,6 +82,12 @@ def handleText( text, channel, user ):
 	if 'yeah' in text.lower():
 		return 'SOLAR ECLIPSES'
 
+	if 'rickroll' in text.lower():
+		return 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+
+	if 'thing' in text.lower():
+		return 'WUBBA LUBBA DUB DUB'
+
 	#split on spaces and grab the first word
 	key = text.split(" ")
 	if  len( key ) == 0:
@@ -90,7 +97,6 @@ def handleText( text, channel, user ):
 	key = key[0]
 	#handle scraping
 	if key.lower() == scrapeKey.lower():
-		
 		return handleScrape( text.replace( scrapeKey + " ", "" ) )
 
 	#handle commands
@@ -98,8 +104,10 @@ def handleText( text, channel, user ):
 		#there can only be one
 		if user != dbId:
 			return 'Sorry, you do not have permission do execute that command.'
-
 		return handleCommand( text.replace( commandKey + " ", "" ) )
+
+	if key.lower() == helpKey1 or key.lower() == helpKey2:
+		return handleHelp()
 
 	return ''
 
@@ -145,7 +153,8 @@ def handleScrape( command ):
 	return "Invalid scrape option: " + command + '\nAvailable options: ' + ', '.join( scrapeOptionsMap.keys() )
 
 def handleHelp():
-	helpMessage = ""
+	helpMessage  = "Don't Panic\n\n" + "Available commands:\n\n" + "scrape [" 
+	helpMessage += ' | '.join( scrapeOptionsMap.keys() )+ ']\n\n' + 'bash myBashCommand (only if you are theLostWizard)\n\n'
 	return helpMessage
 
 def sendReply( sc, ts, channelId, replyText ):
@@ -206,6 +215,7 @@ def main():
 								replyText = handleText( text, response['channel'], response['user'] )
 
 								if replyText:
+									keepAliveCount = 0
 									sendReply( sc, ts, response['channel'], replyText )
 								else:
 									logger.debug(  'replyText is empty!' )
