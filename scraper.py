@@ -84,7 +84,7 @@ class Scraper:
 		logger = logging.getLogger( __name__ )
 		
 		#set format
-		logging.basicConfig( filename=logName, filemode='w', level=logging.DEBUG, format='%(asctime)s:%(levelname)s:%(message)s', datefmt='%Y-%m-%dT%H:%M:%S' )
+		logging.basicConfig( filename=logName, filemode='w', level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s', datefmt='%Y-%m-%dT%H:%M:%S' )
 
 		#initialize
 		self.startTime = 0

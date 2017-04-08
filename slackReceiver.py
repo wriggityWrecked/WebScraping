@@ -34,7 +34,7 @@ if not os.path.isdir( logDirectory ):
 
 logger  = logging.getLogger( __name__ )
 logging.basicConfig( filename=logFileName, filemode='w', level=logging.DEBUG, format='%(asctime)s:%(levelname)s:%(message)s', datefmt='%Y-%m-%dT%H:%M:%S' )
-handler = logging.handlers.RotatingFileHandler( logFileName, maxBytes=2000, backupCount=5 )
+handler = logging.handlers.RotatingFileHandler( logFileName, maxBytes=5000, backupCount=5 )
 logger.addHandler( logging.StreamHandler(sys.stdout) )
 logger.addHandler( handler )
 logger.setLevel( logging.INFO )
