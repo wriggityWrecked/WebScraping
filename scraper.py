@@ -199,7 +199,7 @@ class Scraper:
 				return False, reason
 
 			if not os.path.isfile( self.inventoryFileName ):
-				reason = str( self.inventoryFileName ) + ' not found!' + 'saving ' + self.newFileName + ' as ' + self.inventoryFileName 
+				reason = str( self.inventoryFileName ) + ' not found!' + ', saving ' + self.newFileName + ' as ' + self.inventoryFileName 
 				
 				logging.info( reason )
 				os.rename( self.newFileName, self.inventoryFileName )
@@ -293,7 +293,7 @@ class Scraper:
 		success, message = self.runSpider()
 
 		if not success:
-			errorMessage = 'runSpider failed! ' + message 
+			errorMessage = 'runSpider failed\n' + message 
 			logger.error( errorMessage )
 			self.reportErrorsToSlack( errorMessage )
 			self.setStage( ScraperStage.TERMINATED_ERROR )
@@ -303,7 +303,7 @@ class Scraper:
 		success, results = self.processSpiderResults()
 
 		if not success:
-			errorMessage = 'processSpiderResults failed! ' + results 
+			errorMessage = 'processSpiderResults failed\n' + results 
 			logger.error( errorMessage )
 			self.reportErrorsToSlack( errorMessage )
 			self.setStage( ScraperStage.TERMINATED_ERROR )
@@ -313,7 +313,7 @@ class Scraper:
 		success, message = self.postToSlack( results, self.slackChannel )
 
 		if not success:
-			logger.error( 'postToSlack failed! ' + message )
+			logger.error( 'postToSlack failed\n' + message )
 			self.setStage( ScraperStage.TERMINATED_ERROR )
 			return False, errorMessage
 
