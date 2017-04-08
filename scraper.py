@@ -35,9 +35,8 @@ class Scraper:
 	'Base class for all scrapers'
 
 	def __init__( self, name, spider, productLink, slackChannel ):
-		print 'init'
+		
 		self.stageLock = threading.Lock()
-
 		self.stage     = ScraperStage.INITIALIZED
 		nowString      = datetime.datetime.now().strftime( "%Y-%m-%dT%H:%M:%S" )
 
@@ -89,7 +88,6 @@ class Scraper:
 
 		#initialize
 		self.startTime = 0
-		print 'init'
 
 	def setStage( self, newStage ):
 		
@@ -288,7 +286,6 @@ class Scraper:
 		Main workhorse method of the class. It creates and runs the spider, compares new file output to stored inventory,
 		processes and saves results, and then posts to the appropriate Slack channel. 
 		"""
-		print 'run'
 		self.setStage( ScraperStage.RUNNING )
 
 		#Psh whatever google style guide, I'll describe what I want.
