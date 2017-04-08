@@ -34,10 +34,10 @@ if not os.path.isdir( logDirectory ):
 
 logger  = logging.getLogger( __name__ )
 logging.basicConfig( filename=logFileName, filemode='w', level=logging.DEBUG, format='%(asctime)s:%(levelname)s:%(message)s', datefmt='%Y-%m-%dT%H:%M:%S' )
-handler = logging.handlers.RotatingFileHandler( logFileName, maxBytes=1000, backupCount=5 )
+handler = logging.handlers.RotatingFileHandler( logFileName, maxBytes=2000, backupCount=5 )
 logger.addHandler( logging.StreamHandler(sys.stdout) )
 logger.addHandler( handler )
-logger.setLevel( logging.DEBUG )
+logger.setLevel( logging.INFO )
 
 #todo global thread dictionary to keep track of manual scrapes
 
@@ -189,14 +189,13 @@ def main():
 		while True:
 
 			try:
-
 				r = sc.rtm_read()
 				logger.debug( str( time.time() ) + ' ' + str( r ) )
 
 				#check time, if it's the time delta is greater than our polling then       
 				if len( r ) > 0:
-					attemptCount = 0
-					response     = r[0]
+					keepAliveCount = 0
+					response       = r[0]
 					#check for relevant time key
 
 					if 'ts' in response:
@@ -234,7 +233,7 @@ def main():
 					time.sleep( sleepTimeSeconds )
 					keepAliveCount = 0
 				else:
-					time.sleep( 1 )
+					time.sleep( 2 )
 					keepAliveCount += 1
 
 			except WebSocketConnectionClosedException:
@@ -245,7 +244,7 @@ def main():
 
 			except Exception as e:
 				exc_type, exc_value, exc_tb = sys.exc_info()
-				logger.debug( 'Caught ' + str( "".join( traceback.format_exception( exc_type, exc_value, exc_tb ) ) ) )
+				logger.warn( 'Caught ' + str( "".join( traceback.format_exception( exc_type, exc_value, exc_tb ) ) ) )
 
 		else:
 			logger.debug( "Connection Failed, invalid token?" )
