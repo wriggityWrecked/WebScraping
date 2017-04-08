@@ -2,34 +2,50 @@ from slackclient import SlackClient
 from datetime    import timedelta
 from subprocess  import *
 from websocket   import *
+import os
+import datetime
+import logging
+import logging.handlers
 import time
 import traceback
 import sys
 import scrapeKnl
 import scrapeEtre
 import scrapeBelgianHappiness
+import scrapeBiab
 import threading
 
+logDirectory      = './slackReceiverLog'
+logFileName       = logDirectory + '/slackReceiverLog_' + datetime.datetime.now().strftime( "%Y-%m-%dT%H:%M:%S" )
 commandKey        = 'bash'
 commandChannel    = 'C4UC35TLN'
 dbId              = 'U4SDBCXBJ'
 debugSlackChannel = 'robot_comms'
 scrapeKey         = 'scrape'
-scrapeOptionsMap  = { 'knl' : scrapeKnl, 'etre' : scrapeEtre, 'bh' : scrapeBelgianHappiness }
+scrapeOptionsMap  = { 'knl' : scrapeKnl, 'etre' : scrapeEtre, 'bh' : scrapeBelgianHappiness, 'biab' : scrapeBiab }
 helpKey           = 'help'
 maxKeepAlive      = 60
 #todo help key / list commands
 
-#todo need logging
+if not os.path.isdir( logDirectory ):
+	print( 'creating ' + logDirectory )
+	os.makedirs( logDirectory )
+
+logger  = logging.getLogger( __name__ )
+logging.basicConfig( filename=logFileName, filemode='w', level=logging.DEBUG, format='%(asctime)s:%(levelname)s:%(message)s', datefmt='%Y-%m-%dT%H:%M:%S' )
+handler = logging.handlers.RotatingFileHandler( logFileName, maxBytes=1000, backupCount=5 )
+logger.addHandler( logging.StreamHandler(sys.stdout) )
+logger.addHandler( handler )
+logger.setLevel( logging.DEBUG )
 
 #todo global thread dictionary to keep track of manual scrapes
 
 def handleText( text, channel, user ):
-
-	print 'handleText: ' + text + ' ' + channel + ' ' + user
+	global logger
+	logger.info( 'handleText: ' + text + ' ' + channel + ' ' + user )
 
 	if not text:
-		print 'ignoring empty message'
+		logger.warn( 'ignoring empty message' )
 		return ''
 
 	if 'who knows' in text:
@@ -68,11 +84,10 @@ def handleText( text, channel, user ):
 	#split on spaces and grab the first word
 	key = text.split(" ")
 	if  len( key ) == 0:
-		print 'empty key!'
+		logger.warn(  'empty key!' )
 		return ''
 
 	key = key[0]
-	print key
 	#handle scraping
 	if key.lower() == scrapeKey.lower():
 		
@@ -89,15 +104,16 @@ def handleText( text, channel, user ):
 	return ''
 
 def handleCommand( command ):
-	print 'handleCommand: ' + str( command )
+	global logger
+	logger.info( 'handleCommand: ' + str( command ) )
 
 	try:
 
 		p              = Popen( command, shell=True, stdout=PIPE )
 		stdout, stderr = p.communicate()
 		
-		print stdout
-		print stderr
+		logger.debug( stdout )
+		logger.debug( stderr )
 
 		return str( stdout ) + '\n' + str( stderr )
 
@@ -106,8 +122,8 @@ def handleCommand( command ):
 		return False, 'Caught ' + str( "".join( traceback.format_exception( exc_type, exc_value, exc_tb ) ) )
 
 def handleScrape( command ):
-
-	print 'handleScrape: ' + command
+	global logger
+	logger.info( 'handleScrape: ' + command )
 
 	if command.lower() in scrapeOptionsMap:
 		
@@ -133,8 +149,8 @@ def handleHelp():
 	return helpMessage
 
 def sendReply( sc, ts, channelId, replyText ):
-
-	print ts + ' ' + channelId + ' ' + replyText
+	global logger
+	logger.debug( ts + ' ' + channelId + ' ' + replyText )
 
 	output = sc.api_call(
 	  'chat.postMessage',
@@ -142,9 +158,11 @@ def sendReply( sc, ts, channelId, replyText ):
 	  channel    = channelId,
 	  text       = replyText
 	)
-	print output
+	logger.debug( output )
 
 def main():
+
+	global logger
 
 	sleepTimeSeconds          = 60
 	allowableTimeDeltaSeconds = 3 * sleepTimeSeconds
@@ -164,7 +182,7 @@ def main():
 			try:
 
 				r = sc.rtm_read()
-				print str( time.time() ) + ' ' + str( r )
+				logger.debug( str( time.time() ) + ' ' + str( r ) )
 
 				#check time, if it's the time delta is greater than our polling then       
 				if len( r ) > 0:
@@ -190,19 +208,19 @@ def main():
 								if replyText:
 									sendReply( sc, ts, response['channel'], replyText )
 								else:
-									print 'replyText is empty!'
+									logger.debug(  'replyText is empty!' )
 
 							if 'channel' not in response:
-								print 'No Channel in response!'
+								logger.debug(  'No Channel in response!' )
 
 							if 'user' not in response:
-								print 'No user in response!'
+								logger.debug(  'No user in response!' )
 
 						else:
-							print 'ignoring stale response, elapsedTimeSeconds=' + str( timedelta( seconds=( elapsedTimeSeconds ) ) )
+							logger.warn( 'ignoring stale response, elapsedTimeSeconds=' + str( timedelta( seconds=( elapsedTimeSeconds ) ) ) )
 
 				if not r and keepAliveCount > maxKeepAlive:
-					print 'Sleeping ' + str( sleepTimeSeconds ) + 's'
+					logger.info(  'Sleeping ' + str( sleepTimeSeconds ) + 's' )
 					time.sleep( sleepTimeSeconds )
 					keepAliveCount = 0
 				else:
@@ -211,16 +229,16 @@ def main():
 
 			except WebSocketConnectionClosedException:
 				exc_type, exc_value, exc_tb = sys.exc_info()
-				print 'Caught WebSocketConnectionClosedException:' + str( "".join( traceback.format_exception( exc_type, exc_value, exc_tb ) ) 
+				logger.warn( 'Caught WebSocketConnectionClosedException:' + str( "".join( traceback.format_exception( exc_type, exc_value, exc_tb ) ) ) )
 				#try to re-connect
 				sc.rtm_connect()
 
 			except Exception as e:
 				exc_type, exc_value, exc_tb = sys.exc_info()
-				print 'Caught ' + str( "".join( traceback.format_exception( exc_type, exc_value, exc_tb ) ) 
+				logger.debug( 'Caught ' + str( "".join( traceback.format_exception( exc_type, exc_value, exc_tb ) ) ) )
 
 		else:
-			print "Connection Failed, invalid token?"
+			logger.debug( "Connection Failed, invalid token?" )
 
 if __name__ == "__main__":
 	main()
