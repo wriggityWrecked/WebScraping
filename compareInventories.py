@@ -80,8 +80,8 @@ def compareInventories( inventoryFile, newFile ):
 		logging.info( str( inventoryFile ) + ' is equal to ' + str( newFile ) + ', no differences!' )
 		return r,n
 
-	#print '=================================================================='	
-	#print( 'Comparing ' + str( inventoryFile )  + ' ' + str( newFile ) )
+	#todo need a way to compare and ignore the creation date
+	#http://stackoverflow.com/questions/16275402/ignoring-lines-while-comparing-files-using-python
 
 
 	hashMap1 = inventoryFile2Dictionary( inventoryFile )
@@ -94,15 +94,15 @@ def compareInventories( inventoryFile, newFile ):
 def dprint( removed, added ):
 
 	logging.info( '' )
-	logging.info( 'Removed: ' + str( len ( removed ) ) )
-	logging.info( '' )
-	logging.info( pprint( removed ) )
-	logging.info( '' )
-	logging.info( '==================================================================' )
 	logging.info( '' )
 	logging.info( 'Added:   ' + str( len ( added ) ) )
 	logging.info( '' )
 	logging.info( pprint( added ) )
+	logging.info( '==================================================================' )
+	logging.info( 'Removed: ' + str( len ( removed ) ) )
+	logging.info( '' )
+	logging.info( pprint( removed ) )
+	logging.info( '' )
 	logging.info( '' )
 
 def main():

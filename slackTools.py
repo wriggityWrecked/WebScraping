@@ -30,9 +30,9 @@ def constructSlackMessageWithLink( resultsDictionary, linkFormat ):
 		if len( ls ) > 0:
 			#for now it's fine to append
 			for t in addedList.items():
-				message += t[1] + " : " + ls + str( t[0] ) + '\n\n'
+				message += str( t[1] ) + " : " + ls + str( t[0] ) + '\n\n'
 		else:
-			message += '\n\n'.join( ' : '.join( t ) for t in addedList.items() )
+			message += '\n\n'.join( ' : '.join( str( t ) ) for t in addedList.items() )
 	else:
 		#nothing added, so don't construct a message
 		return ''

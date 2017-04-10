@@ -9,7 +9,7 @@ def run():
 	with lock:
 		#link looks like https://belgiuminabox.com/shop/beer/6004-3-fonteinen-intense-red-oude-kriek-2016-75-cl.html
 		biab = Scraper( 'biab', BelgiumInABox, "", 'biabscraper' )
-		biab.run()
+		biab.run() #this no longer blocks!!!!
 
 def isRunning():
 	#todo return status

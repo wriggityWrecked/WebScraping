@@ -24,11 +24,12 @@ class ScraperStage(Enum):
 
 	INITIALIZED        = 1
 	RUNNING            = 2
-	RUNNING_SPIDER     = 3
-	PROCESSING_RESULTS = 4
-	POSTING_RESULTS    = 5
-	FINISHED           = 6
-	TERMINATED_ERROR   = 7
+	CRAWLING           = 3
+	POST_CRAWL         = 4
+	PROCESSING_RESULTS = 5
+	POSTING_RESULTS    = 6
+	FINISHED           = 7
+	TERMINATED_ERROR   = 8
 
 class Scraper:
 
@@ -85,6 +86,7 @@ class Scraper:
 		
 		#set format
 		logging.basicConfig( filename=logName, filemode='w', level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s', datefmt='%Y-%m-%dT%H:%M:%S' )
+		logger.setLevel( logging.INFO )
 
 		#initialize
 		self.startTime = 0
@@ -142,12 +144,13 @@ class Scraper:
 		http://twistedmatrix.com/trac/wiki/FrequentlyAskedQuestions#Igetexceptions.ValueError:signalonlyworksinmainthreadwhenItrytorunmyTwistedprogramWhatswrong
 		"""
 		try:
-			self.setStage( ScraperStage.RUNNING_SPIDER )
+			self.setStage( ScraperStage.CRAWLING )
 			self.startTime = time.time()
 
 			#post debug message to slack
 			postMessage( debugSlackChannel, 'Starting scraper ' + self.name )
-			configure_logging( {'LOG_FORMAT': '%(levelname)s: %(message)s'} )
+			
+			#configure_logging( {'LOG_FORMAT': '%(levelname)s: %(message)s'} )
 			runner = CrawlerRunner({
 				'USER_AGENT'           : getRandomUserAgent.getUserAgent(),
 				'FEED_FORMAT'          : 'json',
@@ -156,9 +159,12 @@ class Scraper:
 			})
 
 			d = runner.crawl( self.spider )
-			d.addBoth( lambda _: reactor.stop() )
+			#add a callback when we're finished
+			d.addBoth( lambda _: self.postCrawl() )
 
-			reactor.run( installSignalHandlers=0 ) # the script will block here until the crawling is finished
+			#todo someone else needs to handle this!
+			if not reactor.running:
+				threading.Thread( target=reactor.run, kwargs={'installSignalHandlers':0} ).start()
 
 			# process = CrawlerProcess({
 			# 	'USER_AGENT'           : getRandomUserAgent.getUserAgent(),
@@ -169,6 +175,7 @@ class Scraper:
 
 			# process.crawl( self.spider )
 			# process.start() # the script will block here until the crawling is finished
+	        #Thread(target=process.start).start()
 
 			return True, None
 
@@ -281,23 +288,8 @@ class Scraper:
 			exc_type, exc_value, exec_tb = sys.exc_info()
 			return False, 'Caught ' + str( "".join( traceback.format_exception( exc_type, exc_value, exec_tb ) ) ) 
 
-	def run( self ):
-		"""
-		Main workhorse method of the class. It creates and runs the spider, compares new file output to stored inventory,
-		processes and saves results, and then posts to the appropriate Slack channel. 
-		"""
-		self.setStage( ScraperStage.RUNNING )
-
-		#Psh whatever google style guide, I'll describe what I want.
-		#Before you can walk, you must first crawl.
-		success, message = self.runSpider()
-
-		if not success:
-			errorMessage = 'runSpider failed\n' + message 
-			logger.error( errorMessage )
-			self.reportErrorsToSlack( errorMessage )
-			self.setStage( ScraperStage.TERMINATED_ERROR )
-			return False, errorMessage
+	def postCrawl( self ) : 
+		self.setStage( ScraperStage.POST_CRAWL )
 
 		#Now attempt to obtain results
 		success, results = self.processSpiderResults()
@@ -317,5 +309,24 @@ class Scraper:
 			self.setStage( ScraperStage.TERMINATED_ERROR )
 			return False, errorMessage
 
+	def run( self ):
+		"""
+		Main workhorse method of the class. It creates and runs the spider, compares new file output to stored inventory,
+		processes and saves results, and then posts to the appropriate Slack channel. 
+		"""
+		self.setStage( ScraperStage.RUNNING )
+
+		#Psh whatever google style guide, I'll describe what I want.
+		#Before you can walk, you must first crawl.
+		success, message = self.runSpider()
+		#this will callback 
+
+		if not success:
+			errorMessage = 'runSpider failed\n' + message 
+			logger.error( errorMessage )
+			self.reportErrorsToSlack( errorMessage )
+			self.setStage( ScraperStage.TERMINATED_ERROR )
+			return False, errorMessage
+
 		self.setStage( ScraperStage.FINISHED )
-		return True, results
+		return True, message

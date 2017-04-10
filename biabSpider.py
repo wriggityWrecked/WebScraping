@@ -45,7 +45,7 @@ class BelgiumInABox(scrapy.Spider):
 				link = link.replace("https://belgiuminabox.com/shop/", "")
 				i    = link.find('/') + 1
 				j    = link.find('-', i)
-				id   = int( link[i:j] )
+				id   = link[i:j]
 
 				if not dateEntry:
 					dateEntry = True

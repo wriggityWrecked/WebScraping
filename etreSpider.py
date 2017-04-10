@@ -11,6 +11,8 @@ dateEntry  = False
 class EtreSpider(scrapy.Spider):
 
 	logger        = logging.getLogger(__name__)
+	logger.setLevel( logging.INFO )
+
 	name          = "etreBeerSpider"
 	downloadDelay = randint( 8, 15 )
 

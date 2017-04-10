@@ -33,10 +33,10 @@ if not os.path.isdir( logDirectory ):
 	os.makedirs( logDirectory )
 
 logger  = logging.getLogger( __name__ )
-logging.basicConfig( filename=logFileName, filemode='w', level=logging.DEBUG, format='%(asctime)s:%(levelname)s:%(message)s', datefmt='%Y-%m-%dT%H:%M:%S' )
+logging.basicConfig( filename=logFileName, filemode='w', level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s', datefmt='%Y-%m-%dT%H:%M:%S' )
 handler = logging.handlers.RotatingFileHandler( logFileName, maxBytes=5000, backupCount=5 )
-logger.addHandler( logging.StreamHandler(sys.stdout) )
 logger.addHandler( handler )
+logger.addHandler( logging.StreamHandler(sys.stdout) )
 logger.setLevel( logging.INFO )
 
 #todo global thread dictionary to keep track of manual scrapes
@@ -48,6 +48,9 @@ def handleText( text, channel, user ):
 	if not text:
 		logger.warn( 'ignoring empty message' )
 		return ''
+
+	#todo CPU
+	#todo diskspace
 
 	if 'who knows' in text:
 		return 'Jeff knows.'
@@ -135,6 +138,8 @@ def handleScrape( command ):
 
 	if command.lower() in scrapeOptionsMap:
 		
+		#todo scrape ALLLLLLLL
+
 		target = scrapeOptionsMap[ command.lower() ]
 
 		#check if already running
