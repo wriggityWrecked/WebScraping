@@ -83,7 +83,6 @@ def compareInventories( inventoryFile, newFile ):
 	#todo need a way to compare and ignore the creation date
 	#http://stackoverflow.com/questions/16275402/ignoring-lines-while-comparing-files-using-python
 
-
 	hashMap1 = inventoryFile2Dictionary( inventoryFile )
 	hashMap2 = inventoryFile2Dictionary( newFile )
 

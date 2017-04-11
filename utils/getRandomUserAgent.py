@@ -2,9 +2,9 @@ import logging
 import os
 from random import *
 
-userAgentFile    = './userAgentList.txt'
+userAgentFile    = os.path.join( os.path.dirname( __file__ ), './userAgentList.txt' )
 defaultUserAgent = 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1)'
-logger           = logging.getLogger(__name__)
+logger           = logging.getLogger( __name__ )
 
 def getUserAgent():
 
@@ -13,7 +13,7 @@ def getUserAgent():
 		logging.error( str( userAgentFile ) + ' not found!' )
 		return defaultUserAgent
 
-	randomLineNumber = randint( 1,83 )
+	randomLineNumber = randint( 1, 83 )
 	count            = 0
 
 	with open( userAgentFile ) as f:   

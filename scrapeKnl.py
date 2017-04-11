@@ -1,5 +1,5 @@
 from scraper   import *
-from knlSpider import *
+from spiders.knlSpider import KnLBeerSpider
 import threading
 
 lock = threading.Lock()
@@ -15,7 +15,7 @@ def run():
 	if lockAcquired and knl == None:
 		try:
 			knl = Scraper( 'knl', KnLBeerSpider, 'http://www.klwines.com/p/i?i=', 'knlscraper' )
-			knl.run()
+			knl.run() #this doesn't block!!!
 		finally:
 			lock.release()
 			status = str( knl )
@@ -36,7 +36,10 @@ def isRunning():
 		return False
 
 def main():
-	print run()
+	"Run the scraper as a standalone"
+	global knl
+	knl = Scraper( 'knl', KnLBeerSpider, 'http://www.klwines.com/p/i?i=', 'knlscraper' )
+	print knl.oneShot()
 
 if __name__ == "__main__":
 	main()

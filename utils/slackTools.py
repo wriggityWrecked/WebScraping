@@ -1,10 +1,12 @@
 from slackclient        import SlackClient
 from compareInventories import *
 from pprint             import pprint
+
 import os
 import subprocess
 
-logger = logging.getLogger(__name__)
+logger               = logging.getLogger( __name__ )
+tokenFilePathAndName = os.path.join( os.path.dirname( __file__ ), 'slackToken' )
 
 #so far link format only really works for prepend
 #this belongs in scraper
@@ -24,6 +26,7 @@ def constructSlackMessageWithLink( resultsDictionary, linkFormat ):
 		added     = int( resultsDictionary['addedLength'] )
 		addedList = resultsDictionary['addedList']
 
+	#--- todo this should be a function
 	if added > 0 and len( addedList ) > 0:
 		message = 'Added : ' + str( added )  + '\n\n\n'
 
@@ -32,10 +35,12 @@ def constructSlackMessageWithLink( resultsDictionary, linkFormat ):
 			for t in addedList.items():
 				message += str( t[1] ) + " : " + ls + str( t[0] ) + '\n\n'
 		else:
-			message += '\n\n'.join( ' : '.join( str( t ) ) for t in addedList.items() )
+			message += '\n\n'.join( ' : '.join( t ) for t in addedList.items() )
 	else:
 		#nothing added, so don't construct a message
 		return ''
+	#--- end function
+
 
 	if 'removedLength' in resultsDictionary and 'removedList' in resultsDictionary:
 		removed     = int( resultsDictionary['removedLength'] )
@@ -50,7 +55,7 @@ def constructSlackMessageWithLink( resultsDictionary, linkFormat ):
 		if len( ls ) > 0:
 			#for now it's fine to append
 			for t in removedList.items():
-				message += t[1] + " : " + ls + str( t[0] ) + '\n\n'
+				message += str( t[1] ) + " : " + ls + str( t[0] ) + '\n\n'
 		else:
 			message += '\n\n'.join( ' : '.join( t ) for t in removedList.items() )
 
@@ -62,7 +67,7 @@ def constructSlackMessage( resultsDictionary ):
 def postMessage( channel, message ):
 
 	slackToken = "";
-	with open( './slackToken' ) as f:  
+	with open( tokenFilePathAndName ) as f:  
 		slackToken = str( f.read() ).strip()
 
 	sc = SlackClient( slackToken.strip() )

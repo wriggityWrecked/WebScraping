@@ -6,17 +6,19 @@ import time
 import traceback
 import sys
 import os
-import getRandomUserAgent
 import threading
+
 from enum               import Enum
 from datetime           import timedelta
 from pprint             import pprint
 from scrapy.crawler     import CrawlerProcess
-from compareInventories import *
-from slackTools         import *
 from twisted.internet   import reactor
 from scrapy.crawler     import CrawlerRunner
 from scrapy.utils.log   import configure_logging
+
+import utils.getRandomUserAgent
+from utils.compareInventories import *
+from utils.slackTools         import *
 
 debugSlackChannel = 'robot_comms'
 
@@ -25,11 +27,12 @@ class ScraperStage(Enum):
 	INITIALIZED        = 1
 	RUNNING            = 2
 	CRAWLING           = 3
-	POST_CRAWL         = 4
-	PROCESSING_RESULTS = 5
-	POSTING_RESULTS    = 6
-	FINISHED           = 7
-	TERMINATED_ERROR   = 8
+	FINISHED_CRAWLING  = 4
+	POST_CRAWL         = 5
+	PROCESSING_RESULTS = 6
+	POSTING_RESULTS    = 7
+	FINISHED           = 8
+	TERMINATED_ERROR   = 9
 
 class Scraper:
 
@@ -55,7 +58,7 @@ class Scraper:
 		self.slackChannel = slackChannel   
 		
 		#base directory of scraper results
-		baseDirectory = './' + name
+		baseDirectory = os.path.join( os.path.dirname( __file__ ), name )
 		
 		#archive directory of scraper results
 		self.archiveDirectory = baseDirectory + '/' + datetime.datetime.now().strftime( "%Y-%m")   
@@ -63,7 +66,7 @@ class Scraper:
 		#file name to dump Spider JSON output
 		#timestamp in case of failures  
 		self.newFileName = baseDirectory + '/' + 'new_' + name + 'Result_' + nowString + '.json'
-		
+
 		#file name to keep as inventory file: used for all new vs old comparisons
 		self.inventoryFileName = baseDirectory + '/' + name + 'BeerInventory.json'
 		
@@ -134,7 +137,7 @@ class Scraper:
 			logging.warn( self.newFileName + ' + already exists!' )
 
 
-	def runSpider( self ):
+	def runSpider( self, oneShot ):
 		"""
 		Rather than using scrapyd or executing the spider manually via scrapy,
 		this method creates a CrawlerRunnerand runs the spider provided at
@@ -152,37 +155,31 @@ class Scraper:
 			
 			#configure_logging( {'LOG_FORMAT': '%(levelname)s: %(message)s'} )
 			runner = CrawlerRunner({
-				'USER_AGENT'           : getRandomUserAgent.getUserAgent(),
+				'USER_AGENT'           : utils.getRandomUserAgent.getUserAgent(),
 				'FEED_FORMAT'          : 'json',
 				'FEED_URI'             : self.newFileName,
 				'AUTOTHROTTLE_ENABLED' : 'True'
 			})
 
 			d = runner.crawl( self.spider )
-			#add a callback when we're finished
-			d.addBoth( lambda _: self.postCrawl() )
 
-			#todo someone else needs to handle this!
-			if not reactor.running:
-				threading.Thread( target=reactor.run, kwargs={'installSignalHandlers':0} ).start()
-
-			# process = CrawlerProcess({
-			# 	'USER_AGENT'           : getRandomUserAgent.getUserAgent(),
-			# 	'FEED_FORMAT'          : 'json',
-			# 	'FEED_URI'             : self.newFileName,
-			# 	'AUTOTHROTTLE_ENABLED' : 'True'
-			# })
-
-			# process.crawl( self.spider )
-			# process.start() # the script will block here until the crawling is finished
-	        #Thread(target=process.start).start()
+			if oneShot:
+				logger.info('ONESHOT')
+				#stop the reactor when we're done
+				d.addBoth( lambda _: reactor.stop() )
+				reactor.run() #this will block until stop is called
+			else:
+				#add a callback when we're finished
+				d.addBoth( lambda _: self.postCrawl() )
+				#todo someone else needs to handle this!
+				if not reactor.running:
+					threading.Thread( target=reactor.run, kwargs={'installSignalHandlers':0} ).start()
 
 			return True, None
 
 		except Exception as e:
 			exc_type, exc_value, exec_tb = sys.exc_info()
 			return False, 'Caught ' + str( "".join( traceback.format_exception( exc_type, exc_value, exec_tb ) ) ) 
-
 
 	def processSpiderResults( self ):
 		"""	
@@ -306,8 +303,10 @@ class Scraper:
 
 		if not success:
 			logger.error( 'postToSlack failed\n' + message )
-			self.setStage( ScraperStage.TERMINATED_ERROR )
-			return False, errorMessage
+			#self.setStage( ScraperStage.TERMINATED_ERROR )
+			#return False, errorMessage
+
+		return True, results
 
 	def run( self ):
 		"""
@@ -318,7 +317,8 @@ class Scraper:
 
 		#Psh whatever google style guide, I'll describe what I want.
 		#Before you can walk, you must first crawl.
-		success, message = self.runSpider()
+		
+		success, message = self.runSpider( False )
 		#this will callback 
 
 		if not success:
@@ -327,6 +327,23 @@ class Scraper:
 			self.reportErrorsToSlack( errorMessage )
 			self.setStage( ScraperStage.TERMINATED_ERROR )
 			return False, errorMessage
+
+		return True, message
+
+	def oneShot( self ):
+
+		self.setStage( ScraperStage.RUNNING )
+
+		success, message = self.runSpider( True )
+
+		if not success:
+			errorMessage = 'runSpider failed\n' + message 
+			logger.error( errorMessage )
+			self.reportErrorsToSlack( errorMessage )
+			self.setStage( ScraperStage.TERMINATED_ERROR )
+			return False, errorMessage
+
+		success, message = self.postCrawl()
 
 		self.setStage( ScraperStage.FINISHED )
 		return True, message
