@@ -155,7 +155,7 @@ class Scraper:
 			
 			#configure_logging( {'LOG_FORMAT': '%(levelname)s: %(message)s'} )
 			runner = CrawlerRunner({
-				'USER_AGENT'           : utils.getRandomUserAgent.getUserAgent(),
+				'USER_AGENT'           : getRandomUserAgent.getUserAgent(),
 				'FEED_FORMAT'          : 'json',
 				'FEED_URI'             : self.newFileName,
 				'AUTOTHROTTLE_ENABLED' : 'True'
