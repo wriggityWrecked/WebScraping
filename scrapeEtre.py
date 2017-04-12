@@ -1,5 +1,5 @@
 from scraper    import *
-from etreSpider import *
+from spiders.etreSpider import EtreSpider
 import threading
 
 lock = threading.Lock()

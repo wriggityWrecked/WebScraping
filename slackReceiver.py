@@ -15,7 +15,7 @@ import scrapeBelgianHappiness
 import scrapeBiab
 import threading
 
-logDirectory      = './slackReceiverLog'
+logDirectory      = '.data/slackReceiverLog'
 logFileName       = logDirectory + '/slackReceiverLog_' + datetime.datetime.now().strftime( "%Y-%m-%dT%H:%M:%S" )
 commandKey        = 'bash'
 commandChannel    = 'C4UC35TLN'

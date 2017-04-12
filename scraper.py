@@ -16,7 +16,7 @@ from twisted.internet   import reactor
 from scrapy.crawler     import CrawlerRunner
 from scrapy.utils.log   import configure_logging
 
-import utils.getRandomUserAgent
+from utils                    import getRandomUserAgent
 from utils.compareInventories import *
 from utils.slackTools         import *
 
@@ -58,7 +58,7 @@ class Scraper:
 		self.slackChannel = slackChannel   
 		
 		#base directory of scraper results
-		baseDirectory = os.path.join( os.path.dirname( __file__ ), name )
+		baseDirectory = os.path.join( os.path.dirname( __file__ ), 'data/' + name )
 		
 		#archive directory of scraper results
 		self.archiveDirectory = baseDirectory + '/' + datetime.datetime.now().strftime( "%Y-%m")   

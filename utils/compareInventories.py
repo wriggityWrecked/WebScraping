@@ -2,8 +2,9 @@ import json
 import sys
 import filecmp
 import os
-from pprint import pprint
 import logging
+from subprocess  import *
+from pprint      import pprint
 
 logger = logging.getLogger(__name__)
 
@@ -80,8 +81,8 @@ def compareInventories( inventoryFile, newFile ):
 		logging.info( str( inventoryFile ) + ' is equal to ' + str( newFile ) + ', no differences!' )
 		return r,n
 
-	#todo need a way to compare and ignore the creation date
-	#http://stackoverflow.com/questions/16275402/ignoring-lines-while-comparing-files-using-python
+	#use bash to compare so we ourselves don't have to go through line by line
+	#"diff  <(tail -n +3 " + file1 + ") <(tail -n +3 " + file2 + ") --strip-trailing-cr | wc -l"
 
 	hashMap1 = inventoryFile2Dictionary( inventoryFile )
 	hashMap2 = inventoryFile2Dictionary( newFile )
