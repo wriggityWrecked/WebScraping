@@ -9,8 +9,8 @@ class TestSchedule(unittest.TestCase):
     Unit tests for the Schedule class. 
     """
     def setUp(self):
-        self.scheduleDictionary = {1: {normalHoursKey: ['2', '3']}, \
-                                5: {normalHoursKey: ['6', '7'], peakHoursKey: ['8', '9']}}
+        self.scheduleDictionary = {1: {NORMAL_HOURS_KEY: ['2', '3']}, \
+                                5: {NORMAL_HOURS_KEY: ['6', '7'], PEAK_HOURS_KEY: ['8', '9']}}
 
     def test_badInput(self):
 
