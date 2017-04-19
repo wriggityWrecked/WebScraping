@@ -2,6 +2,7 @@ from slackclient import SlackClient
 from datetime    import timedelta
 from subprocess  import *
 from websocket   import *
+
 import os
 import datetime
 import logging
@@ -9,24 +10,28 @@ import logging.handlers
 import time
 import traceback
 import sys
+import threading
+
 import scrapeKnl
 import scrapeEtre
 import scrapeBelgianHappiness
 import scrapeBiab
-import threading
 
-logDirectory      = '.data/slackReceiverLog'
-logFileName       = logDirectory + '/slackReceiverLog_' + datetime.datetime.now().strftime( "%Y-%m-%dT%H:%M:%S" )
-commandKey        = 'bash'
-commandChannel    = 'C4UC35TLN'
-dbId              = 'U4SDBCXBJ'
-debugSlackChannel = 'robot_comms'
-scrapeKey         = 'scrape'
-scrapeOptionsMap  = { 'knl' : scrapeKnl, 'etre' : scrapeEtre, 'bh' : scrapeBelgianHappiness, 'biab' : scrapeBiab }
-helpKey1          = 'help'
-helpKey2          = '?'
-maxKeepAlive      = 60
-#todo help key / list commands
+from utils import robotTextResponses
+
+#todo import from tools
+tokenFilePathAndName = os.path.join( os.path.dirname( __file__ ), 'utils/slackToken' )
+logDirectory         = './data/slackReceiverLog'
+logFileName          = logDirectory + '/slackReceiverLog_' + datetime.datetime.now().strftime( "%Y-%m-%dT%H:%M:%S" ) + '.log'
+commandKey           = 'bash'
+commandChannel       = 'C4UC35TLN'
+dbId                 = 'U4SDBCXBJ'
+debugSlackChannel    = 'robot_comms'
+scrapeKey            = 'scrape'
+scrapeOptionsMap     = { 'knl' : scrapeKnl, 'etre' : scrapeEtre, 'bh' : scrapeBelgianHappiness, 'biab' : scrapeBiab }
+helpKey1             = 'help'
+helpKey2             = '?'
+maxKeepAlive         = 60
 
 if not os.path.isdir( logDirectory ):
 	print( 'creating ' + logDirectory )
@@ -40,9 +45,9 @@ logger.addHandler( logging.StreamHandler(sys.stdout) )
 logger.setLevel( logging.INFO )
 
 #todo global thread dictionary to keep track of manual scrapes
-
+#this should be a lib (for fun text responses)
 def handleText( text, channel, user ):
-	global logger
+
 	logger.info( 'handleText: ' + text + ' ' + channel + ' ' + user )
 
 	if not text:
@@ -51,45 +56,6 @@ def handleText( text, channel, user ):
 
 	#todo CPU
 	#todo diskspace
-
-	if 'who knows' in text:
-		return 'Jeff knows.'
-
-	if 'llama' in text:
-		return 'Tinaface!'
-
-	if 'regulators' in text.lower():
-		return 'Mount up!'
-
-	if 'destiny' in text.lower():
-		return 'Eyes up, guardian.'
-
-	if 'what a save' in text.lower():
-		return 'SAVAGE'
-
-	if 'name' in text.lower():
-		return 'droopy weiner, lol'
-
-	if 'stout' in text.lower():
-		return 'dimah dozen'
-
-	if 'rockin' in text.lower():
-		return "Rockin, rockin and rollin\ndown to the beach I'm strollin\nbut the seagulls poke at my head\nNOT FUN\n but the seagulls\nhmm\nstop it now\nHOOOHAAAHOOHOOHOHOHA\nHOOHAHOHOHOHA\nHOOOHAHOHOHOHOHAHOHAHOHOHA\n"
-
-	if 'ok' in text.lower():
-		return 'WHAT A SAVE'
-
-	if 'tired' in text.lower():
-		return 'go to sleep, h0'
-
-	if 'yeah' in text.lower():
-		return 'SOLAR ECLIPSES'
-
-	if 'rickroll' in text.lower():
-		return 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
-
-	if 'thing' in text.lower():
-		return 'WUBBA LUBBA DUB DUB'
 
 	#split on spaces and grab the first word
 	key = text.split(" ")
@@ -112,10 +78,16 @@ def handleText( text, channel, user ):
 	if key.lower() == helpKey1 or key.lower() == helpKey2:
 		return handleHelp()
 
+	#no commands, let's have fun with parsing text
+	parsed, response = robotTextResponses.handleTextInput( text )
+
+	if parsed:
+		return response 
+
 	return ''
 
 def handleCommand( command ):
-	global logger
+
 	logger.info( 'handleCommand: ' + str( command ) )
 
 	try:
@@ -133,14 +105,15 @@ def handleCommand( command ):
 		return False, 'Caught ' + str( "".join( traceback.format_exception( exc_type, exc_value, exc_tb ) ) )
 
 def handleScrape( command ):
-	global logger
+
+	command = command.strip().lower()
 	logger.info( 'handleScrape: ' + command )
 
-	if command.lower() in scrapeOptionsMap:
+	if command in scrapeOptionsMap:
 		
 		#todo scrape ALLLLLLLL
 
-		target = scrapeOptionsMap[ command.lower() ]
+		target = scrapeOptionsMap[ command ]
 
 		#check if already running
 		if not getattr( target, 'isRunning')():
@@ -163,7 +136,7 @@ def handleHelp():
 	return helpMessage
 
 def sendReply( sc, ts, channelId, replyText ):
-	global logger
+
 	logger.debug( ts + ' ' + channelId + ' ' + replyText )
 
 	output = sc.api_call(
@@ -176,16 +149,15 @@ def sendReply( sc, ts, channelId, replyText ):
 
 def main():
 
-	global logger
-
 	sleepTimeSeconds          = 60
 	allowableTimeDeltaSeconds = 3 * sleepTimeSeconds
 	slackToken                = "";
 
-	with open( './slackToken' ) as f:  
+	with open( tokenFilePathAndName ) as f:  
 		slackToken = str( f.read() ).strip()
 
-	sc = SlackClient( slackToken.strip() )
+	sc = SlackClient( slackToken )
+	#todo post hello
 
 	if sc.rtm_connect():
 
@@ -249,10 +221,12 @@ def main():
 
 			except Exception as e:
 				exc_type, exc_value, exc_tb = sys.exc_info()
-				logger.warn( 'Caught ' + str( "".join( traceback.format_exception( exc_type, exc_value, exc_tb ) ) ) )
+				logger.error( 'Caught ' + str( "".join( traceback.format_exception( exc_type, exc_value, exc_tb ) ) ) )
 
 		else:
-			logger.debug( "Connection Failed, invalid token?" )
+			logger.error( "Connection Failed, invalid token?" )
+
+	#todo try and post with sc "goodbye"
 
 if __name__ == "__main__":
 	main()

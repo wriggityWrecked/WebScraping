@@ -5,9 +5,13 @@ from random import *
 
 #scrapy runspider belgianHappinessSpider.py -o output.json
 #https://shop.cantillon.be/en/
-#https://shop.cantillon.be/en/beers/49-exceptional-cuvee-cantillon.html#
+#https://shop.cantillon.be/en/beers/49-exceptional-cuvee-cantillon.html
 #https://www.reddit.com/r/atlbeer/comments/5bzoc4/ratlbeer_random_daily_discussion_november_09_2016/
 #https://shop.cantillon.be/en/27-beers
+#https://shop.cantillon.be/en/29-special-beer-packs
+#https://shop.cantillon.be/en/special-beer-packs/51-grape-cantillon.html
+
+#released around noon pacific
 
 dateEntry = False
 

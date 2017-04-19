@@ -1,5 +1,5 @@
 from scraper   import *
-from belgianHappinessSpider import *
+from spiders.belgianHappinessSpider import *
 import threading
 
 lock = threading.Lock()

@@ -1,5 +1,5 @@
 from scraper    import *
-from biabSpider import *
+from spiders.biabSpider import *
 import threading
 
 lock = threading.Lock()

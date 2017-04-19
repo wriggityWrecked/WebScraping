@@ -3,10 +3,14 @@ import sys
 import filecmp
 import os
 import logging
+
 from subprocess  import *
 from pprint      import pprint
 
-logger = logging.getLogger(__name__)
+#todo rename to compareTools
+
+logger          = logging.getLogger(__name__)
+creationDateKey = 'creationDate'
 
 def compareMap( oldMap, newMap ):
 	
@@ -14,12 +18,12 @@ def compareMap( oldMap, newMap ):
 	newEntries     = {}
 
 	for entry in newMap.keys():
-		#check if in map1
+		#check if in oldMap
 		if entry not in oldMap:
 			newEntries[entry] = newMap[entry]
 
 	for entry in oldMap.keys():
-		#check if in map1
+		#check if in newMap
 		if entry not in newMap:
 			removedEntries[entry] = oldMap[entry]
 
@@ -28,28 +32,21 @@ def compareMap( oldMap, newMap ):
 def inventoryFile2Dictionary( inventoryFile ):
 
 	d = {}
+
+	if not os.path.isfile( inventoryFile ):
+		logging.error( str( inventoryFile ) + ' not found!' )
+		return d
+
+	if os.stat( inventoryFile ).st_size == 0:
+		logging.error(  str( inventoryFile ) + ' is empty!' )
+		return d
+
 	with open( inventoryFile ) as f:    
 	    data = json.load(f)
 	    for line in data:
-	    	if 'creationDate' not in line:
+	    	if creationDateKey not in line:
 				d[ line['id'] ] = line[ 'name' ].encode( "utf8" )
 
-	return d
-
-def resultsFile2Dictionary( resultsFile ):
-	
-	d = {}
-
-	if not os.path.isfile( resultsFile ):
-		logging.error( str( resultsFile ) + ' not found!' )
-		return d
-
-	if os.stat( resultsFile ).st_size == 0:
-		logging.error(  str( resultsFile ) + ' is empty!' )
-		return d
-		
-	with open( resultsFile ) as f:    
-	    d = json.load(f)
 	return d
 
 def compareInventories( inventoryFile, newFile ):
@@ -59,31 +56,29 @@ def compareInventories( inventoryFile, newFile ):
 
 	if not os.path.isfile( inventoryFile ):
 		logging.error( str( inventoryFile ) + ' not found!' )
-		#todo alert for error, return empties
 		return r,n
 
 	if os.stat( inventoryFile ).st_size == 0:
 		logging.error( str( inventoryFile ) + ' is empty!' )
-		#todo alert for error, return empties
 		return r,n
 
 	if not os.path.isfile( newFile ):
 		logging.error( str( newFile ) + ' not found!' )
-		#todo alert for error, return empties
 		return r,n
 
 	if os.stat( newFile ).st_size == 0:
 		logging.error( str( newFile ) + ' is empty!' )
-		#todo alert for error, return empties
 		return r,n
 
 	if filecmp.cmp( inventoryFile, newFile, shallow=False ):
 		logging.info( str( inventoryFile ) + ' is equal to ' + str( newFile ) + ', no differences!' )
 		return r,n
 
+	#todo need a way to either get rid of creation date (to compare files) or ignore first few lines
+
 	#use bash to compare so we ourselves don't have to go through line by line
 	#"diff  <(tail -n +3 " + file1 + ") <(tail -n +3 " + file2 + ") --strip-trailing-cr | wc -l"
-
+	#subprocess.call('diff  <(tail -n +3 ' + 'old_knl_2017-04-10T16:08:57.json' + ') <(tail -n +3 ' + 'old_knl_2017-04-10T23:09:04.json' + ') --strip-trailing-cr', shell=True)
 	hashMap1 = inventoryFile2Dictionary( inventoryFile )
 	hashMap2 = inventoryFile2Dictionary( newFile )
 
