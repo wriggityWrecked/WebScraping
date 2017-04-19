@@ -57,14 +57,12 @@ class TestSchedule(unittest.TestCase):
     def test_calculateScheduleDelay(self):
         #hammer bounds
         for i in xrange(0,100):
-            
+
             with patch('schedule.getCurrentDayHourMinute') as mock_getCurrentDayHourMinute:
 
                 mock_getCurrentDayHourMinute.return_value = (4,2,6)
-                delay = calculateScheduleDelay(1*60, 3*60)
+                delay = calculateScheduleDelay(1*60, 3*60) / 60
                 self.assertNotEqual(-1, delay)
-                delay = delay / 60
-                print delay
                 self.assertTrue( schedule.OPEN_MIN_PERIOD_MINUTES  <= delay \
                                 <= schedule.OPEN_MAX_PERIOD_MINUTES  )
 

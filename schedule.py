@@ -9,10 +9,18 @@ OPEN_DEFAULT_PERIOD_MINUTES = 42
 OPEN_MAX_DELAY_MINUTES = 20
 
 
-def validateScheduleDictionary(dictionaryToValidate):
-    # check all the keys
-    if dictionaryToValidate is None or not dictionaryToValidate:
-        return False, "input cannot be empty!"
+# def validateScheduleDictionary(dictionaryToValidate):
+    
+#     if dictionaryToValidate is None or not dictionaryToValidate:
+#         return False, 'input cannot be empty!'
+
+#     #check all the keys
+#     for key, value in dictionaryToValidate.iteritems():
+#     	if key < 0 or key > 6:
+#     		return False, 'invalid input key: ' + str(key) + ', must be [0,6]'
+#     		#value should be a map
+#     		if
+
 
 
 def getMinutesFromStringEntry(stringEntry):
