@@ -13,7 +13,8 @@ DATE_ENTRY = False #todo this should be a class var
 
 
 class KnLBeerSpider(scrapy.Spider):
-
+    """Simple extension of scrapy.Spider for KnL.
+    """
 
     name = "knlBeerSpider"
     download_delay = randint(8, 15)
