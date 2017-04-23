@@ -9,8 +9,6 @@ import logging
 from random import randint
 import scrapy
 
-DATE_ENTRY = False #todo this should be a class var
-
 
 class KnLBeerSpider(scrapy.Spider):
     """Simple extension of scrapy.Spider for KnL.
@@ -22,6 +20,11 @@ class KnLBeerSpider(scrapy.Spider):
         'COOKIES_ENABLED': 'false',
         'DOWNLOAD_DELAY': str(download_delay)
     }
+
+    def __init__(self, *args, **kwargs):
+
+        self.date_entry = False
+        super(KnLBeerSpider, self).__init__(*args, **kwargs)
 
     def start_requests(self):
 
@@ -43,7 +46,6 @@ class KnLBeerSpider(scrapy.Spider):
     def parse(self, response):
 
         logging.getLogger(__name__)
-        global DATE_ENTRY
 
         # grab each entry listed
         if response is not None:
@@ -51,6 +53,7 @@ class KnLBeerSpider(scrapy.Spider):
             for beer in response.css('div.result-desc'):
 
                 if beer is not None:
+
                     # id used for hashmap
                     id_ = beer.xpath('./a/@href').extract()
 
@@ -62,12 +65,12 @@ class KnLBeerSpider(scrapy.Spider):
                     id_ = id_[7:]
                     beer_name = ''.join(beer_name).strip()
 
-                    # filter out location in the name
+                    # filter out location in the name, specific to these scraped results
                     if beer_name != "Redwood City" and beer_name != "Hollywood" \
                     		and beer_name != "San Francisco" and 'Read More ' not in beer_name:
 
-                        if not DATE_ENTRY:
-                            DATE_ENTRY = True
+                        if not self.date_entry:
+                            self.date_entry = True
                             yield {
                                 'creationDate': \
                                 	datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
@@ -82,7 +85,6 @@ class KnLBeerSpider(scrapy.Spider):
             '//div[@class="floatLeft"]/a[contains(text(),"next")]/@href').extract()
         next_page = None
 
-        # did we find a link?
         if links:
             next_page = links[0]
 
