@@ -3,10 +3,18 @@ from random import uniform
 
 NORMAL_HOURS_KEY = 'n'
 PEAK_HOURS_KEY = 'p'
-OPEN_MAX_PERIOD_MINUTES = 60
-OPEN_MIN_PERIOD_MINUTES = 25
-OPEN_DEFAULT_PERIOD_MINUTES = 42
-OPEN_MAX_DELAY_MINUTES = 20
+
+NORMAL_MAX_PERIOD_MINUTES = 60
+NORMAL_MIN_PERIOD_MINUTES = 25
+NORMAL_DEFAULT_PERIOD_MINUTES = 42
+NORMAL_MAX_DELAY_MINUTES = 20
+
+PEAK_MAX_PERIOD_MINUTES = 40
+PEAK_MIN_PERIOD_MINUTES = 15
+PEAK_DEFAULT_PERIOD_MINUTES = 25
+PEAK_MAX_DELAY_MINUTES = 15
+
+#todo this should probably be a class
 
 
 # def validateScheduleDictionary(dictionaryToValidate):
@@ -21,19 +29,27 @@ OPEN_MAX_DELAY_MINUTES = 20
 #     		#value should be a map
 #     		if
 
+def to_minutes(hours, minutes):
+    """Return input in minutes.
 
+    hours -- current hours to be converted
+    minutes -- currents minutes added to converted hours
+    """
+    return hours * 60 + minutes
 
-def getMinutesFromStringEntry(stringEntry):
+def getMinutesFromStringEntry(string_entry):
+    """
+    """
 
-    if not stringEntry:
+    if not string_entry:
         return None
 
-    split = stringEntry.split(':')
+    split = string_entry.split(':')
 
     if len(split) == 1:
-        return int(split[0]) * 60
+        return to_minutes(int(split[0]), 0)
     elif len(split) == 2:
-        return int(split[0]) * 60 + int(split[1])
+        return to_minutes(int(split[0]), int(split[1]))
 
         # key, day of the week : value, hour in 24hr format
         # day of the week follows
@@ -47,6 +63,15 @@ def getMinutesFromStringEntry(stringEntry):
 
         # toto validate before settings
 
+def getScheduleForDayInMinutes(scheduleDictionary, desiredDayOfTheWeek):
+
+    open_, close_, peak_start, peak_end, message = getScheduleForDay(scheduleDictionary, desiredDayOfTheWeek)
+
+    if open_ != None:
+        return getMinutesFromStringEntry(open_), getMinutesFromStringEntry(close_), \
+                getMinutesFromStringEntry(peak_start), getMinutesFromStringEntry(peak_end), message
+
+    return None, None, None, None, "none"
 
 def getScheduleForDay(scheduleDictionary, desiredDayOfTheWeek):
 
@@ -70,41 +95,86 @@ def getScheduleForDay(scheduleDictionary, desiredDayOfTheWeek):
         return None, None, None, None, 'normalHoursKey ' + NORMAL_HOURS_KEY + \
             ' not found ' + str(subDictionary)
 
-    o = subDictionary[NORMAL_HOURS_KEY][0]
-    c = subDictionary[NORMAL_HOURS_KEY][1]
+    open_ = subDictionary[NORMAL_HOURS_KEY][0]
+    close_ = subDictionary[NORMAL_HOURS_KEY][1]
 
-    ps = None
-    pe = None
+    peak_start = None
+    peak_end = None
 
     if PEAK_HOURS_KEY in subDictionary:
-        ps = subDictionary[PEAK_HOURS_KEY][0]
-        pe = subDictionary[PEAK_HOURS_KEY][1]
+        peak_start = subDictionary[PEAK_HOURS_KEY][0]
+        peak_end = subDictionary[PEAK_HOURS_KEY][1]
 
-    return o, c, ps, pe, ""
+    return open_, close_, peak_start, peak_end, ""
 
 
 def getCurrentDayHourMinute():
-
+    """Return the current day, hour, minute from datetime.datetime.today().
+    """
     today = datetime.datetime.today()
     return today.weekday(), today.hour, today.minute
 
 
-def calculateScheduleDelay(openMinutes, closeMinutes):
+def getSecondsUntilNextDay():
+    """Return the current day's hour and minutes and minutes.
 
-    # THIS IS NOT UTC
+    This is a helper function that simply takes the current hour, converts 
+    it to minutes, adds and returns the current day's minutes.
+    """
+    _, hour, minute = getCurrentDayHourMinute()
+    return 24*60*60 - (hour*60*60 + minute*60)
+
+
+def isCurrentlyScheduleable(scheduleDictionary, day):
+
+    #these are in minutes
+    open_, close_, peak_start, peak_end, _ = getScheduleForDayInMinutes(scheduleDictionary, day)
+    
     day, hour, minute = getCurrentDayHourMinute()
+    current_minutes = to_minutes(hour, minute)
 
-    currentMinutes = (hour * 60) + minute
+    return current_minutes >= peak_start and current_minutes < peak_end or \
+            current_minutes >= open_ and current_minutes < close_
 
-    if currentMinutes >= openMinutes and currentMinutes < closeMinutes:
-        # open for business, go ahead and scrape
-        delaySeconds = OPEN_DEFAULT_PERIOD_MINUTES * 60 + \
-            uniform(-1 * OPEN_MAX_DELAY_MINUTES *
-                    60, OPEN_MAX_DELAY_MINUTES * 60)
-        delaySeconds = max(delaySeconds, OPEN_MIN_PERIOD_MINUTES * 60)
-        delaySeconds = min(delaySeconds, OPEN_MAX_PERIOD_MINUTES * 60)
 
-        return delaySeconds
+def getScheduleDelayForDay(scheduleDictionary, inputDay):
+    """Return the current schedule of the specified day. 
 
-    # we can't run right now! need to delay until the next day opening
-    return -1  # todo something better than -1?
+    Args: 
+        scheduleDictionary: dictionary representing a valid schedule. 
+        day: day desired to extract from dictionary. 
+    """
+    #these are in minutes
+    open_, close_, peak_start, peak_end, _ = getScheduleForDayInMinutes(scheduleDictionary, inputDay)
+    
+    day, hour, minute = getCurrentDayHourMinute()
+    current_minutes = to_minutes(hour, minute)
+
+    if current_minutes >= peak_start and current_minutes < peak_end:
+        return calculateScheduleDelay(True)
+    elif current_minutes >= open_ and current_minutes < close_:
+        return calculateScheduleDelay(False)
+    else:
+        return -1
+
+
+def calculateScheduleDelay(is_peak):
+
+    if is_peak:
+        period_minutes = PEAK_DEFAULT_PERIOD_MINUTES
+        min_period_minutes = PEAK_MIN_PERIOD_MINUTES
+        max_period_minutes = PEAK_MAX_PERIOD_MINUTES
+        max_delay_minutes = PEAK_MAX_DELAY_MINUTES
+    else:
+        period_minutes = NORMAL_DEFAULT_PERIOD_MINUTES
+        min_period_minutes = NORMAL_MIN_PERIOD_MINUTES
+        max_period_minutes = NORMAL_MAX_PERIOD_MINUTES
+        max_delay_minutes = NORMAL_MAX_DELAY_MINUTES
+
+    delay_seconds = period_minutes * 60 + \
+        uniform(-1 * max_delay_minutes *
+                60, max_delay_minutes * 60)
+    delay_seconds = max(delay_seconds, min_period_minutes * 60)
+    delay_seconds = min(delay_seconds, max_period_minutes * 60)
+
+    return delay_seconds

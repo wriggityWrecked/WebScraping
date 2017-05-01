@@ -4,6 +4,7 @@ Example:
 	$ scrapy runspider knl_spider.py -o output.json
 
 """
+
 import datetime
 import logging
 from random import randint
@@ -41,7 +42,7 @@ class KnLBeerSpider(scrapy.Spider):
             logging.info(
                 '================================================================')
 
-            yield scrapy.Request(url=url, callback=self.parse)
+            yield scrapy.Request(url=url, callback=self.parse, dont_filter=True)
 
     def parse(self, response):
 
@@ -95,4 +96,4 @@ class KnLBeerSpider(scrapy.Spider):
             logging.info('scraping ' + str(next_page))
             logging.info(
                 '================================================================')
-            yield scrapy.Request(next_page, callback=self.parse)
+            yield scrapy.Request(next_page, callback=self.parse, dont_filter=True)

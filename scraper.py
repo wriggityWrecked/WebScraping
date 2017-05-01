@@ -1,4 +1,3 @@
-import datetime
 import json
 import logging
 import time
@@ -6,10 +5,10 @@ import traceback
 import sys
 import os
 import threading
+import datetime
 
-from enum import Enum
 from datetime import timedelta
-from pprint import pprint
+from enum import Enum
 from twisted.internet import reactor
 from scrapy.crawler import CrawlerRunner
 
@@ -17,31 +16,33 @@ from utils import getRandomUserAgent
 from utils.compareInventories import compareInventories, dprint
 from utils.slackTools import postResultsToSlackChannel, postResultsToSlackChannelWithLink, postMessage
 
-debugSlackChannel = 'robot_comms'
+DEBUG_SLACK_CHANNEL = 'robot_comms'
 
 
 class ScraperStage(Enum):
-
-    INITIALIZED = 1
-    RUNNING = 2
-    CRAWLING = 3
-    FINISHED_CRAWLING = 4
-    POST_CRAWL = 5
-    PROCESSING_RESULTS = 6
-    POSTING_RESULTS = 7
-    FINISHED = 8
-    TERMINATED_ERROR = 9
+    """
+    Enum denoting the current scraper stage. 
+    """
+    CREATED = 1
+    INITIALIZED = 2
+    RUNNING = 3
+    CRAWLING = 4
+    FINISHED_CRAWLING = 5
+    POST_CRAWL = 6
+    PROCESSING_RESULTS = 7
+    POSTING_RESULTS = 8
+    FINISHED = 9
+    TERMINATED_ERROR = 10
 
 
 class Scraper(object):
 
     'Base class for all scrapers'
 
-    def __init__(self, name, spider, productLink, slackChannel):
+    def __init__(self, name, spider, product_link, slack_channel):
 
-        self.stageLock = threading.Lock()
-        self.stage = ScraperStage.INITIALIZED
-        nowString = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+        self.stage_lock = threading.Lock()
+        self.stage = ScraperStage.CREATED
 
         # name of the scraper
         self.name = name
@@ -51,65 +52,78 @@ class Scraper(object):
 
         # link to use to append to an ID, todo need to make a rich object as links are page specific
         # either specify or leave blank
-        self.productLink = productLink
+        self.product_link = product_link
 
         # slack channel name used to post results
-        self.slackChannel = slackChannel
+        self.slack_channel = slack_channel
 
         # base directory of scraper results
-        baseDirectory = os.path.join(os.path.dirname(__file__), 'data/' + name)
+        self.base_directory = os.path.join(
+            os.path.dirname(__file__), 'data/' + name)
+
+        self.start_time = 0
+
+        self.run_event = threading.Event()
+
+
+    def initialize(self):
+
+        self.setStage(ScraperStage.INITIALIZED)
+        self.start_time = 0
+        now = datetime.datetime.now()
+        now_string = now.strftime("%Y-%m-%dT%H:%M:%S")
 
         # archive directory of scraper results
-        self.archiveDirectory = baseDirectory + '/' + \
-            datetime.datetime.now().strftime("%Y-%m")
+        self.archive_directory = self.base_directory + \
+            '/' + now.strftime("%Y-%m")
 
         # file name to dump Spider JSON output
         # timestamp in case of failures
-        self.newFileName = baseDirectory + '/' + 'new_' + \
-            name + 'Result_' + nowString + '.json'
+        self.new_file_name = self.base_directory + '/' + 'new_' + \
+            self.name + 'Result_' + now_string + '.json'
 
         # file name to keep as inventory file: used for all new vs old
         # comparisons
-        self.inventoryFileName = baseDirectory + '/' + name + 'BeerInventory.json'
+        self.inventory_file_name = self.base_directory + \
+            '/' + self.name + 'BeerInventory.json'
 
         # file name for comparison results
-        self.resultsOutputFileName = self.archiveDirectory + '/' + \
-            'results_' + name + 'Beer'  # append time and .json later
+        self.results_output_file_name = self.archive_directory + '/' + \
+            'results_' + self.name + 'Beer'  # append time and .json later
 
         # file name for old inventory data
-        self.rotatedFileName = self.archiveDirectory + '/' + \
-            'old_' + name + '_'  # append time and .json later
+        self.rotated_file_name = self.archive_directory + '/' + \
+            'old_' + self.name + '_'  # append time and .json later
 
         # logging directory for this scraper
-        logDirectory = baseDirectory + '/' + 'log'
+        self.log_directory = self.base_directory + '/' + 'log'
 
         # log name each time run is called
-        logName = logDirectory + '/' + name + '_' + nowString + '.log'
+        self.log_name = self.log_directory + '/' + self.name + '_' + now_string + '.log'
 
-        self.checkAndSetupDirectories(baseDirectory, logDirectory)
+        self.checkAndSetupDirectories(self.base_directory, self.archive_directory, self.log_directory)
 
         # set logger name
         self.logger = logging.getLogger(__name__)
 
         # set format
-        logging.basicConfig(filename=logName, filemode='w', level=logging.INFO,
+        logging.basicConfig(filename=self.log_name, filemode='w', level=logging.INFO,
                             format='%(asctime)s:%(levelname)s:%(message)s', datefmt='%Y-%m-%dT%H:%M:%S')
         self.logger.setLevel(logging.INFO)
 
-        # initialize
-        self.startTime = 0
 
     def setStage(self, newStage):
 
-        with self.stageLock:
+        with self.stage_lock:
             print 'setting stage to ' + str(newStage)
             self.stage = newStage
+
 
     def __str__(self):
 
         string = "Stage=" + str(self.stage)
 
-        if self.startTime != 0:
+        if self.start_time != 0:
 
             if self.stage == ScraperStage.FINISHED:
                 string += ", Finished "
@@ -117,30 +131,32 @@ class Scraper(object):
                 string += ", Started "
 
             string += str(timedelta(seconds=(time.time() -
-                                             self.startTime))) + " ago."
+                                             self.start_time))) + " ago."
 
         return string
 
-    def checkAndSetupDirectories(self, baseDirectory, logDirectory):
+
+    def checkAndSetupDirectories(self, base_directory, archive_directory, log_directory):
 
         # housekeeping for files storage, e.g.
         # named directory for results
-        if not os.path.isdir(baseDirectory):
-            logging.info('creating ' + baseDirectory)
-            os.makedirs(baseDirectory)
+        if not os.path.isdir(base_directory):
+            logging.info('creating ' + base_directory)
+            os.makedirs(base_directory)
 
-        if not os.path.isdir(self.archiveDirectory):
-            logging.info('creating ' + self.archiveDirectory)
-            os.makedirs(self.archiveDirectory)
+        if not os.path.isdir(self.archive_directory):
+            logging.info('creating ' + self.archive_directory)
+            os.makedirs(self.archive_directory)
 
-        if not os.path.isdir(logDirectory):
-            logging.info('creating ' + logDirectory)
-            os.makedirs(logDirectory)
+        if not os.path.isdir(log_directory):
+            logging.info('creating ' + log_directory)
+            os.makedirs(log_directory)
 
         # check if a results file exists (it shouldn't if properly rotated)
         # shouldn't be possible now with timestamp
-        if os.path.isfile(self.newFileName):
-            logging.warn(self.newFileName + ' + already exists!')
+        if os.path.isfile(self.new_file_name):
+            logging.warn(self.new_file_name + ' + already exists!')
+
 
     def runSpider(self, oneShot):
         """
@@ -153,47 +169,57 @@ class Scraper(object):
         """
         try:
             self.setStage(ScraperStage.CRAWLING)
-            self.startTime = time.time()
+            self.start_time = time.time()
+            self.run_event.clear()
 
             # post debug message to slack
-            postMessage(debugSlackChannel, 'Starting scraper ' + self.name)
+            postMessage(DEBUG_SLACK_CHANNEL, 'Starting scraper ' + self.name)
 
             #configure_logging( {'LOG_FORMAT': '%(levelname)s: %(message)s'} )
             runner = CrawlerRunner({
                 'USER_AGENT': getRandomUserAgent.getUserAgent(),
                 'FEED_FORMAT': 'json',
-                'FEED_URI': self.newFileName,
-                'AUTOTHROTTLE_ENABLED': 'True'
+                'FEED_URI': self.new_file_name,
+                'AUTOTHROTTLE_ENABLED': 'True',
+                'DUPEFILTER_DEBUG': 'True'
             })
 
-            d = runner.crawl(self.spider)
+            #this is fucking worthless if the reactor is already running
+            _d = runner.crawl(self.spider)
 
             if oneShot:
                 self.logger.info('ONESHOT')
                 # stop the reactor when we're done
-                d.addBoth(lambda _: reactor.stop())
+                _d.addBoth(lambda _: reactor.stop())
                 reactor.run()  # this will block until stop is called
             else:
+                self.logger.info('run continuous')
                 # add a callback when we're finished
-                d.addBoth(lambda _: self.postCrawl())
+                _d.addBoth(lambda _: self.postCrawl())
                 # todo someone else needs to handle this!
                 if not reactor.running:
+                    print 'starting reactor'
                     threading.Thread(target=reactor.run, kwargs={
                                      'installSignalHandlers': 0}).start()
+                print 'waiting for event....'
+                self.run_event.wait()
+                print 'event fired, done'
 
             return True, None
 
-        except Exception as e:
+        except Exception as _e:
             exc_type, exc_value, exec_tb = sys.exc_info()
-            return False, 'Caught ' + str("".join(traceback.format_exception(exc_type, exc_value, exec_tb)))
+            return False, 'Caught ' \
+                + str("".join(traceback.format_exception(exc_type, exc_value, exec_tb)))
+
 
     def processSpiderResults(self):
-        """	
-        Process / Compare new results obtained from the associated Spider in this class. 
-        If the inventory file does not exist, then the new file becomes our inventory. 
+        """
+        Process / Compare new results obtained from the associated Spider in this class.
+        If the inventory file does not exist, then the new file becomes our inventory.
 
-        Otherwise, use the module compareInventories to obtain our added and removed 
-        items from inventory. 
+        Otherwise, use the module compareInventories to obtain our added and removed
+        items from inventory.
         """
 
         try:
@@ -201,40 +227,41 @@ class Scraper(object):
 
             # Crawling must be successful or the new file and inventory files
             # must exist as this point
-            if not os.path.isfile(self.newFileName):
+            if not os.path.isfile(self.new_file_name):
 
-                reason = str(self.newFileName) + ' not found!'
+                reason = str(self.new_file_name) + ' not found!'
                 logging.warning((reason))
 
                 return False, reason
 
-            if not os.path.isfile(self.inventoryFileName):
-                reason = str(self.inventoryFileName) + ' not found!' + \
-                    ', saving ' + self.newFileName + ' as ' + self.inventoryFileName
+            if not os.path.isfile(self.inventory_file_name):
+                reason = str(self.inventory_file_name) + ' not found!' + \
+                    ', saving ' + self.new_file_name + ' as ' + self.inventory_file_name
 
                 logging.info(reason)
-                os.rename(self.newFileName, self.inventoryFileName)
+                os.rename(self.new_file_name, self.inventory_file_name)
 
                 return False, reason
 
             # Both files exist, OK to compare
             logging.debug(
-                'compareInventories( ' + self.inventoryFileName + ", " + self.newFileName + " )")
+                'compareInventories( ' + self.inventory_file_name + ", "\
+                     + self.new_file_name + " )")
             removed, added = compareInventories(
-                self.inventoryFileName, self.newFileName)
+                self.inventory_file_name, self.new_file_name)
 
             # debug printing
             dprint(removed, added)
 
-            # now we have a new inventory file, rotating to inventoryFileName
+            # now we have a new inventory file, rotating to inventory_file_name
             now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-            self.rotatedFileName = self.rotatedFileName + now + '.json'
+            self.rotated_file_name = self.rotated_file_name + now + '.json'
 
-            logging.debug('rotating ' + self.inventoryFileName +
-                          ' to ' + self.rotatedFileName)
+            logging.debug('rotating ' + self.inventory_file_name +
+                          ' to ' + self.rotated_file_name)
 
-            os.rename(self.inventoryFileName, self.rotatedFileName)
-            os.rename(self.newFileName, self.inventoryFileName)
+            os.rename(self.inventory_file_name, self.rotated_file_name)
+            os.rename(self.new_file_name, self.inventory_file_name)
 
             # compile results
             results = {}
@@ -246,20 +273,23 @@ class Scraper(object):
             logging.debug('results = ' + str(results))
 
             # save results
-            self.resultsOutputFileName = self.resultsOutputFileName + '_' + now + '.json'
-            with open(self.resultsOutputFileName, 'w') as outFile:
-                logging.debug('saving ' + self.resultsOutputFileName)
-                json.dump(results, outFile)
+            self.results_output_file_name = self.results_output_file_name + '_'\
+                 + now + '.json'
+            with open(self.results_output_file_name, 'w') as out_file:
+                logging.debug('saving ' + self.results_output_file_name)
+                json.dump(results, out_file)
 
             return True, results
 
-        except Exception as e:
+        except Exception as _e:
             exc_type, exc_value, exec_tb = sys.exc_info()
-            return False, 'Caught ' + str("".join(traceback.format_exception(exc_type, exc_value, exec_tb)))
+            return False, 'Caught ' \
+                + str("".join(traceback.format_exception(exc_type, exc_value, exec_tb)))
 
-    def postToSlack(self, results, slackChannel):
-        """	
-        Construct a results string, from the input, and post to the input Slack channel. 
+
+    def postToSlack(self, results, slack_channel):
+        """
+        Construct a results string, from the input, and post to the input Slack channel.
         """
 
         try:
@@ -267,92 +297,107 @@ class Scraper(object):
             self.setStage(ScraperStage.POSTING_RESULTS)
 
             # post to slack
-            if not self.productLink:
-                postResultsToSlackChannel(results, slackChannel)
+            if not self.product_link:
+                postResultsToSlackChannel(results, slack_channel)
             else:
                 postResultsToSlackChannelWithLink(
-                    results, self.productLink, slackChannel)
+                    results, self.product_link, slack_channel)
 
-            ar = 'Added: ' + str(results['addedLength']) + \
+            added_removed = 'Added: ' + str(results['addedLength']) + \
                 ', Removed: ' + str(results['removedLength'])
             # post to debug slack
-            postMessage(debugSlackChannel, 'Finished crawler ' + self.name + ', ' + ar +
-                        ', time taken = ' + str(timedelta(seconds=(time.time() - self.startTime))))
+            postMessage(DEBUG_SLACK_CHANNEL, 'Finished crawler ' + self.name \
+                + ', ' + added_removed + ', time taken = '\
+                + str(timedelta(seconds=(time.time() - self.start_time))))
 
             return True, None
 
         except Exception:
             exc_type, exc_value, exec_tb = sys.exc_info()
-            return False, 'Caught ' + str("".join(traceback.format_exception(exc_type, exc_value, exec_tb)))
+            return False, 'Caught ' \
+                + str("".join(traceback.format_exception(exc_type, exc_value, exec_tb)))
 
-    def reportErrorsToSlack(self, errorMessage):
+
+    def reportErrorsToSlack(self, error_message):
 
         try:
 
-            postMessage(debugSlackChannel, errorMessage)
+            postMessage(DEBUG_SLACK_CHANNEL, error_message)
             return True, None
 
         except Exception:
             exc_type, exc_value, exec_tb = sys.exc_info()
-            return False, 'Caught ' + str("".join(traceback.format_exception(exc_type, exc_value, exec_tb)))
+            return False, 'Caught ' \
+                + str("".join(traceback.format_exception(exc_type, exc_value, exec_tb)))
+
 
     def postCrawl(self):
-        self.setStage(ScraperStage.POST_CRAWL)
+        try:
+            self.setStage(ScraperStage.POST_CRAWL)
 
-        # Now attempt to obtain results
-        success, results = self.processSpiderResults()
+            # Now attempt to obtain results
+            success, results = self.processSpiderResults()
 
-        if not success:
-            errorMessage = 'processSpiderResults failed\n' + results
-            self.logger.error(errorMessage)
-            self.reportErrorsToSlack(errorMessage)
-            self.setStage(ScraperStage.TERMINATED_ERROR)
-            return False, errorMessage
+            if not success:
+                error_message = 'processSpiderResults failed\n' + results
+                self.logger.error(error_message)
+                self.reportErrorsToSlack(error_message)
+                self.setStage(ScraperStage.TERMINATED_ERROR)
+                return False, error_message
 
-        # post the results to slack
-        success, message = self.postToSlack(results, self.slackChannel)
+            # post the results to slack
+            success, message = self.postToSlack(results, self.slack_channel)
 
-        if not success:
-            self.logger.error('postToSlack failed\n' + message)
-            #self.setStage( ScraperStage.TERMINATED_ERROR )
-            # return False, errorMessage
+            if not success:
+                self.logger.error('postToSlack failed\n' + message)
+                #self.setStage( ScraperStage.TERMINATED_ERROR )
+                # return False, error_message
 
-        return True, results
+            return True, results
+
+        finally:
+            print 'setting event'
+            self.run_event.set()
 
     def run(self):
         """
-        Main workhorse method of the class. It creates and runs the spider, compares new file output to stored inventory,
-        processes and saves results, and then posts to the appropriate Slack channel. 
-        """
-        self.setStage(ScraperStage.RUNNING)
+        Main workhorse method of the class. It creates and runs the spider, 
+        new file output to stored inventory,
+        processes and saves results, and then posts to the appropriate Slack 
+        channel. 
 
-        # Psh whatever google style guide, I'll describe what I want.
-        # Before you can walk, you must first crawl.
+        This does not block!
+        """
+        self.initialize()
+        self.setStage(ScraperStage.RUNNING)
 
         success, message = self.runSpider(False)
         # this will callback
 
         if not success:
-            errorMessage = 'runSpider failed\n' + message
-            self.logger.error(errorMessage)
-            self.reportErrorsToSlack(errorMessage)
+            error_message = 'runSpider failed\n' + message
+            self.logger.error(error_message)
+            self.reportErrorsToSlack(error_message)
             self.setStage(ScraperStage.TERMINATED_ERROR)
-            return False, errorMessage
+            return False, error_message
 
         return True, message
 
-    def oneShot(self):
 
+    def oneShot(self):
+        """ Blocking run.
+        """
+        self.initialize()
         self.setStage(ScraperStage.RUNNING)
 
         success, message = self.runSpider(True)
 
         if not success:
-            errorMessage = 'runSpider failed\n' + message
-            self.logger.error(errorMessage)
-            self.reportErrorsToSlack(errorMessage)
+            error_message = 'runSpider failed\n' + message
+            self.logger.error(error_message)
+            self.reportErrorsToSlack(error_message)
             self.setStage(ScraperStage.TERMINATED_ERROR)
-            return False, errorMessage
+            return False, error_message
 
         success, message = self.postCrawl()
 
