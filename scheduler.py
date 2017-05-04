@@ -102,14 +102,14 @@ class Scheduler(object):
 
             if _run_scraper:
                 self.stage = SchedulerStage.WAITING
-                msg = 'waiting ' + str(datetime.timedelta(\
+                msg = self.name + 'waiting ' + str(datetime.timedelta(\
                     seconds=delay_seconds)) + ' to run scraper'
                 print msg
                 postMessage(DEBUG_SLACK_CHANNEL, msg)
             else:
                 self.stage = SchedulerStage.DELAYING
                 delay_seconds = getSecondsUntilNextDay()
-                msg = 'waiting ' + str(datetime.timedelta(\
+                msg = self.name + 'waiting ' + str(datetime.timedelta(\
                     seconds=delay_seconds)) + ' until next day'
                 print msg
                 postMessage(DEBUG_SLACK_CHANNEL, msg)
@@ -120,7 +120,8 @@ class Scheduler(object):
             if self._is_event_lock_set():
                 self.stage = SchedulerStage.TERMINATED
                 print self
-                print 'exiting run'
+                msg = self.name + 'exiting run'
+                postMessage(DEBUG_SLACK_CHANNEL, msg + ' ' + self)
                 return
 
             if _run_scraper:
