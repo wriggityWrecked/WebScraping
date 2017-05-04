@@ -2,7 +2,7 @@
 
 This module is simply a wrapper to instantiate a specific
 scraper (KNL) and run it. The main function will exit
-when the scraper has completed its oneShot function.
+when the scraper has completed its one_shot function.
 
 Example:
 	$ python scrape_knl.py
@@ -18,7 +18,7 @@ def main():
 
     knl_scraper = Scraper('knl', KnLBeerSpider,
 					'http://www.klwines.com/p/i?i=', 'knlscraper')
-    print knl_scraper.oneShot() #this blocks
+    print knl_scraper.one_shot()
 
 
 if __name__ == "__main__":

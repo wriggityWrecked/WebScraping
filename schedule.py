@@ -5,14 +5,14 @@ NORMAL_HOURS_KEY = 'n'
 PEAK_HOURS_KEY = 'p'
 
 NORMAL_MAX_PERIOD_MINUTES = 60
-NORMAL_MIN_PERIOD_MINUTES = 25
-NORMAL_DEFAULT_PERIOD_MINUTES = 42
+NORMAL_MIN_PERIOD_MINUTES = 20
+NORMAL_DEFAULT_PERIOD_MINUTES = 40
 NORMAL_MAX_DELAY_MINUTES = 20
 
-PEAK_MAX_PERIOD_MINUTES = 40
+PEAK_MAX_PERIOD_MINUTES = 35
 PEAK_MIN_PERIOD_MINUTES = 15
 PEAK_DEFAULT_PERIOD_MINUTES = 25
-PEAK_MAX_DELAY_MINUTES = 15
+PEAK_MAX_DELAY_MINUTES = 10
 
 #todo this should probably be a class
 
@@ -37,6 +37,8 @@ def to_minutes(hours, minutes):
     """
     return hours * 60 + minutes
 
+#todo need to return as a tuple, so to determine if open is somethin like
+#23:30 and close is the next day at 12
 def getMinutesFromStringEntry(string_entry):
     """
     """

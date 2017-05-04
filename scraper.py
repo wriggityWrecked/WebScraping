@@ -64,6 +64,7 @@ class Scraper(object):
         self.start_time = 0
 
         self.run_event = threading.Event()
+        self.queue_event = threading.Event()
 
 
     def initialize(self):
@@ -158,7 +159,7 @@ class Scraper(object):
             logging.warn(self.new_file_name + ' + already exists!')
 
 
-    def runSpider(self, oneShot):
+    def runSpider(self, one_shot):
         """
         Rather than using scrapyd or executing the spider manually via scrapy,
         this method creates a CrawlerRunnerand runs the spider provided at
@@ -168,44 +169,53 @@ class Scraper(object):
         http://twistedmatrix.com/trac/wiki/FrequentlyAskedQuestions#Igetexceptions.ValueError:signalonlyworksinmainthreadwhenItrytorunmyTwistedprogramWhatswrong
         """
         try:
-            self.setStage(ScraperStage.CRAWLING)
-            self.start_time = time.time()
-            self.run_event.clear()
 
-            # post debug message to slack
-            postMessage(DEBUG_SLACK_CHANNEL, 'Starting scraper ' + self.name)
+            while True:
 
-            #configure_logging( {'LOG_FORMAT': '%(levelname)s: %(message)s'} )
-            runner = CrawlerRunner({
-                'USER_AGENT': getRandomUserAgent.getUserAgent(),
-                'FEED_FORMAT': 'json',
-                'FEED_URI': self.new_file_name,
-                'AUTOTHROTTLE_ENABLED': 'True',
-                'DUPEFILTER_DEBUG': 'True'
-            })
+                self.setStage(ScraperStage.CRAWLING)
+                self.start_time = time.time()
+                self.run_event.clear()
 
-            #this is fucking worthless if the reactor is already running
-            _d = runner.crawl(self.spider)
+                # post debug message to slack
+                postMessage(DEBUG_SLACK_CHANNEL, 'Starting scraper ' + self.name)
 
-            if oneShot:
-                self.logger.info('ONESHOT')
-                # stop the reactor when we're done
-                _d.addBoth(lambda _: reactor.stop())
-                reactor.run()  # this will block until stop is called
-            else:
-                self.logger.info('run continuous')
-                # add a callback when we're finished
-                _d.addBoth(lambda _: self.postCrawl())
-                # todo someone else needs to handle this!
-                if not reactor.running:
-                    print 'starting reactor'
-                    threading.Thread(target=reactor.run, kwargs={
-                                     'installSignalHandlers': 0}).start()
-                print 'waiting for event....'
-                self.run_event.wait()
-                print 'event fired, done'
+                #configure_logging( {'LOG_FORMAT': '%(levelname)s: %(message)s'} )
+                runner = CrawlerRunner({
+                    'USER_AGENT': getRandomUserAgent.getUserAgent(),
+                    'FEED_FORMAT': 'json',
+                    'FEED_URI': self.new_file_name,
+                    'AUTOTHROTTLE_ENABLED': 'True',
+                    'DUPEFILTER_DEBUG': 'True'
+                })
 
-            return True, None
+                #todo deferred spider or something like
+                #https://kirankoduru.github.io/python/multiple-scrapy-spiders.html
+                _d = runner.crawl(self.spider)
+
+                if one_shot:
+                    self.logger.info('ONESHOT')
+                    # stop the reactor when we're done
+                    _d.addBoth(lambda _: reactor.stop())
+                    reactor.run()  # this will block until stop is called
+                else:
+                    self.logger.info('run continuous')
+                    # add a callback when we're finished
+                    _d.addBoth(lambda _: self.post_crawl_continuous())
+                    # todo someone else needs to handle this!
+                    if not reactor.running:
+                        print 'starting reactor'
+                        _t = threading.Thread(target=reactor.run, kwargs={
+                                         'installSignalHandlers': 0}).start()
+                    else:
+                        print 'reactor already running'
+
+                    print 'waiting for event....'
+                    self.run_event.wait() #block until run is done with the first
+                    print 'event fired, done with a crawler'
+                    self.run_event.clear()
+
+                #todo don't return here, just fire an event that we are done
+                return True, None
 
         except Exception as _e:
             exc_type, exc_value, exec_tb = sys.exc_info()
@@ -356,8 +366,21 @@ class Scraper(object):
             return True, results
 
         finally:
-            print 'setting event'
+            print 'setting run_event'
             self.run_event.set()
+
+    def post_crawl_continuous(self):
+        print 'post_crawl_continuous'
+        self.postCrawl()
+        print 'done post crawl, waiting for queue event'
+        self.queue_event.wait()
+        print 'finished waiting post crawl cont'
+        self.queue_event.clear()
+        self.run()
+
+    def start_new_job(self):
+        print 'starting new job yo'
+        self.queue_event.set()
 
     def run(self):
         """
@@ -379,12 +402,12 @@ class Scraper(object):
             self.logger.error(error_message)
             self.reportErrorsToSlack(error_message)
             self.setStage(ScraperStage.TERMINATED_ERROR)
-            return False, error_message
+            #return False, error_message
 
         return True, message
 
 
-    def oneShot(self):
+    def one_shot(self):
         """ Blocking run.
         """
         self.initialize()

@@ -13,7 +13,8 @@ def getUserAgent():
 		logging.error( str( userAgentFile ) + ' not found!' )
 		return defaultUserAgent
 
-	randomLineNumber = randint( 1, 83 )
+	#todo get the upper bound from the file (line number)
+	randomLineNumber = randint( 1, 82 )
 	count            = 0
 
 	with open( userAgentFile ) as f:   

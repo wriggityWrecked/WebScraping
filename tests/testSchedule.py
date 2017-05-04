@@ -18,7 +18,8 @@ class TestSchedule(unittest.TestCase):
     def setUp(self):
         self.schedule_dictionary = {1: {NORMAL_HOURS_KEY: ['2', '3']},
                                     4: {NORMAL_HOURS_KEY: ['8', '20'], PEAK_HOURS_KEY: ['11', '14']},
-                                    5: {NORMAL_HOURS_KEY: ['6', '7'], PEAK_HOURS_KEY: ['8', '9']}}
+                                    5: {NORMAL_HOURS_KEY: ['6', '7'], PEAK_HOURS_KEY: ['8', '9']},
+                                    6: {NORMAL_HOURS_KEY: ['23:30', '7'], PEAK_HOURS_KEY: ['8', '9']}}
 
     def tearDown(self):
         self.schedule_dictionary = None
@@ -59,6 +60,15 @@ class TestSchedule(unittest.TestCase):
         self.assertEqual(c, '3')
         self.assertEqual(ps, None)
         self.assertEqual(pe, None)
+
+    def testHours(self):
+        o, c, ps, pe, m = getScheduleForDayInMinutes(self.schedule_dictionary, 6)
+        print o
+        print c
+        print ps
+        print pe
+        print m
+
 
     def test_getMinutesFromStringEntry(self):
 

@@ -15,22 +15,24 @@ class SchedulerStage(Enum):
 
     CREATED = 1
     WAITING = 2
-    RUNNING = 3
-    TERMINATED = 4
+    DELAYING = 3
+    RUNNING = 4
+    EXECUTING = 5
+    TERMINATED = 6
 
 class Scheduler(object):
 
-    def __init__(self, Scraper, schedule_dictionary):
+    def __init__(self, name, schedule_dictionary, scraper_script):
 
         self.schedule_dictionary = schedule_dictionary
-        self.scraper = Scraper
-        self.events = {}
         self.time_last_ran = 0
         self.number_of_times_run = 0
         self.number_of_times_waited = 0
         self.event = threading.Event()
         self.event_lock = threading.RLock()
+        self.name = name
         self.stage = SchedulerStage.CREATED
+        self.scraper_script = scraper_script
         # todo validate input dictionary
 
     def __str__(self):
@@ -62,21 +64,20 @@ class Scheduler(object):
 
     def run_scraper(self):
 
-        #todo launch a stupid fucking sub process, because the twisted reactor
+        #launch a sub process, because the twisted reactor
         #won't accept new jobs after run is called
-        subprocess.call(["python", "scrape_knl.py"])
-        # self.stage = SchedulerStage.RUNNING
-        # success, message = self.scraper.run()
-        #can't do oneshot, it needs main thread
-        #need to do background, but also wait 
-        #and don't schedule on top of it
-        #print message
-        #return success
-
+        
+        #todo new thread and monitor if need be
+        self.stage = SchedulerStage.EXECUTING
+        print self
+        subprocess.call(["python", self.scraper_script])
+        self.number_of_times_run += 1
+        #todo time this
+        self.stage = SchedulerStage.RUNNING
 
     def run(self):
 
-        postMessage(DEBUG_SLACK_CHANNEL, "starting schedule for " + str(self.scraper))
+        postMessage(DEBUG_SLACK_CHANNEL, "starting schedule for " + self.name)
         self.stage = SchedulerStage.RUNNING
 
         while not self._is_event_lock_set():
@@ -87,7 +88,6 @@ class Scheduler(object):
                 print 'running first scraper'
                 self.run_scraper()
                 postMessage(DEBUG_SLACK_CHANNEL, str(self))
-                self.number_of_times_run += 1
 
 
             print self
@@ -96,28 +96,28 @@ class Scheduler(object):
 
             day, _, _ = getCurrentDayHourMinute()
             delay_seconds = getScheduleDelayForDay(self.schedule_dictionary, day)
-            print str(delay_seconds)
+            print 'delay_seconds=' + str(delay_seconds)
 
             _run_scraper = True if delay_seconds != -1 else False
 
             if _run_scraper:
-                delay_seconds=5
-                msg = 'waiting ' + str(datetime.timedelta(seconds=delay_seconds))+ ' to run scraper'
+                self.stage = SchedulerStage.WAITING
+                msg = 'waiting ' + str(datetime.timedelta(\
+                    seconds=delay_seconds)) + ' to run scraper'
                 print msg
                 postMessage(DEBUG_SLACK_CHANNEL, msg)
             else:
+                self.stage = SchedulerStage.DELAYING
                 delay_seconds = getSecondsUntilNextDay()
-                msg = 'waiting ' + str(datetime.timedelta(seconds=delay_seconds)) + ' until next day'
+                msg = 'waiting ' + str(datetime.timedelta(\
+                    seconds=delay_seconds)) + ' until next day'
                 print msg
                 postMessage(DEBUG_SLACK_CHANNEL, msg)
 
-            self.stage = SchedulerStage.WAITING
             self.number_of_times_waited += 1
-
             self.event.wait(timeout=delay_seconds)
 
             if self._is_event_lock_set():
-                print 'asdfasdf'
                 self.stage = SchedulerStage.TERMINATED
                 print self
                 print 'exiting run'
@@ -125,37 +125,31 @@ class Scheduler(object):
 
             if _run_scraper:
                 self.run_scraper()
-                self.number_of_times_run += 1
 
             print self
             postMessage(DEBUG_SLACK_CHANNEL, str(self))
 
         print 'no run'
 
-def main():
-
-    knl_scraper = Scraper('knl', KnLBeerSpider,
-                    'http://www.klwines.com/p/i?i=', 'knlscraper')
+def schedule_knl():
 
     ##todo try catch for KeyBoard
-    sd = {0: {NORMAL_HOURS_KEY: ['9', '20'], PEAK_HOURS_KEY: ['10:30', '15']},\
-            1: {NORMAL_HOURS_KEY: ['9', '20'], PEAK_HOURS_KEY: ['10:30', '15']},\
-            2: {NORMAL_HOURS_KEY: ['9', '20'], PEAK_HOURS_KEY: ['10:30', '15']},\
-            3: {NORMAL_HOURS_KEY: ['9', '20'], PEAK_HOURS_KEY: ['10:30', '15']},\
-            4: {NORMAL_HOURS_KEY: ['9', '20'], PEAK_HOURS_KEY: ['10:30', '15']},\
+    sd = {0: {NORMAL_HOURS_KEY: ['9', '20'], PEAK_HOURS_KEY: ['10', '15']},\
+            1: {NORMAL_HOURS_KEY: ['9', '20'], PEAK_HOURS_KEY: ['10', '15']},\
+            2: {NORMAL_HOURS_KEY: ['9', '20'], PEAK_HOURS_KEY: ['10', '15']},\
+            3: {NORMAL_HOURS_KEY: ['9', '20'], PEAK_HOURS_KEY: ['10', '15']},\
+            4: {NORMAL_HOURS_KEY: ['9', '20'], PEAK_HOURS_KEY: ['10', '15']},\
             5: {NORMAL_HOURS_KEY: ['8', '20']},\
-            6: {NORMAL_HOURS_KEY: ['9', '22']}}
+            6: {NORMAL_HOURS_KEY: ['9', '20']}}
 
-    test = Scheduler(knl_scraper, sd)
+    test = Scheduler('knl', sd, 'scrape_knl.py')
     t = threading.Thread( target=test.run, args=() )
 
+    #todo a scheduler should handle this thread
     try:
-        print 'hi'
-        #is this needed?
-        t.daemon = True
         t.start()
         while t.isAlive(): 
-            t.join(60) #todo longer wait?
+            t.join(120) #todo longer wait?
             print time.time()
             #todo log we are waiting and active..?
     except (KeyboardInterrupt, SystemExit):
@@ -167,7 +161,49 @@ def main():
         #test.join()
         print test
         print 'interrupted and done'
-        #http://stackoverflow.com/questions/29100568/how-can-i-stop-python-script-without-killing-it
+        #http://stackoverflow.com/questions/29100568/how-can-i-stop-python
+        #-script-without-killing-it
+
+def schedule_etre():
+
+    ##todo try catch for KeyBoard
+    sd = {0: {NORMAL_HOURS_KEY: ['0', '10'], PEAK_HOURS_KEY: ['2', '6']},\
+            1: {NORMAL_HOURS_KEY: ['0', '10'], PEAK_HOURS_KEY: ['2', '6']},\
+            2: {NORMAL_HOURS_KEY: ['0', '10'], PEAK_HOURS_KEY: ['2', '6']},\
+            3: {NORMAL_HOURS_KEY: ['0', '10'], PEAK_HOURS_KEY: ['2', '6']},\
+            4: {NORMAL_HOURS_KEY: ['0', '10'], PEAK_HOURS_KEY: ['2', '6']},\
+            5: {NORMAL_HOURS_KEY: ['0', '10']},\
+            6: {NORMAL_HOURS_KEY: ['0', '10']}}
+
+    test = Scheduler('etre', sd, 'scrape_etre.py')
+    t = threading.Thread( target=test.run, args=() )
+
+    try:
+        t.start()
+        while t.isAlive(): 
+            t.join(120) #todo longer wait?
+            print time.time()
+            #todo log we are waiting and active..?
+    except (KeyboardInterrupt, SystemExit):
+        print 'interrupted!!'
+        test.set_event_lock(True)
+        print test._is_event_lock_set()
+        print test
+        #todo better waiting mechanism for run to fall through
+        #test.join()
+        print test
+        print 'interrupted and done'
+        #http://stackoverflow.com/questions/29100568/how-can-i-stop-python
+        #-script-without-killing-it
 
 if __name__ == "__main__":
-    main()
+
+    if len( sys.argv ) > 1:
+        script_name = sys.argv[1]
+
+        if 'etre' in script_name:
+            schedule_etre()
+        elif 'knl' in script_name:
+            schedule_knl()
+        else:
+            print 'invalid input'
