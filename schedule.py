@@ -156,6 +156,8 @@ def getScheduleDelayForDay(scheduleDictionary, inputDay):
         return calculateScheduleDelay(True)
     elif current_minutes >= open_ and current_minutes < close_:
         return calculateScheduleDelay(False)
+    elif current_minutes < open_ and current_minutes < close_:
+        return (open_ - current_minutes) * 60
     else:
         return -1
 

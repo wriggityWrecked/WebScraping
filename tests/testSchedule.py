@@ -63,12 +63,7 @@ class TestSchedule(unittest.TestCase):
 
     def testHours(self):
         o, c, ps, pe, m = getScheduleForDayInMinutes(self.schedule_dictionary, 6)
-        print o
-        print c
-        print ps
-        print pe
-        print m
-
+        #todo finish
 
     def test_getMinutesFromStringEntry(self):
 
@@ -95,6 +90,35 @@ class TestSchedule(unittest.TestCase):
             delay = delay / 60
             self.assertTrue(schedule.PEAK_MIN_PERIOD_MINUTES <= delay
                             <= schedule.PEAK_MAX_PERIOD_MINUTES)
+
+    def test_getScheduleDelayForDay(self):
+
+        with patch('schedule.getCurrentDayHourMinute') as mock_getCurrentDayHourMinute:
+
+            mock_getCurrentDayHourMinute.return_value = (5, 5, 0)
+            delay = getScheduleDelayForDay(self.schedule_dictionary, 5)
+            self.assertNotEqual(-1, delay)
+            self.assertEqual(60*60, delay)
+
+            mock_getCurrentDayHourMinute.return_value = (5, 1, 0)
+            delay = getScheduleDelayForDay(self.schedule_dictionary, 5)
+            self.assertNotEqual(-1, delay)
+            self.assertEqual(5*60*60, delay) 
+
+            mock_getCurrentDayHourMinute.return_value = (5, 6, 30)
+            delay = getScheduleDelayForDay(self.schedule_dictionary, 5)
+            self.assertNotEqual(-1, delay)
+            delay = delay / 60
+            self.assertTrue(schedule.NORMAL_MIN_PERIOD_MINUTES <= delay
+                            <= schedule.NORMAL_MAX_PERIOD_MINUTES)
+
+            mock_getCurrentDayHourMinute.return_value = (5, 8, 10)
+            delay = getScheduleDelayForDay(self.schedule_dictionary, 5)
+            self.assertNotEqual(-1, delay)
+            delay = delay / 60
+            self.assertTrue(schedule.PEAK_MIN_PERIOD_MINUTES <= delay
+                            <= schedule.PEAK_MAX_PERIOD_MINUTES)
+
 
     def test_getSecondsUntilNextDay(self):
 
