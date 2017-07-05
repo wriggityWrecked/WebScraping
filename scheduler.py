@@ -120,8 +120,8 @@ class Scheduler(object):
             if self._is_event_lock_set():
                 self.stage = SchedulerStage.TERMINATED
                 print self
-                msg = self.name + 'exiting run'
-                postMessage(DEBUG_SLACK_CHANNEL, msg + ' ' + self)
+                msg = self.name + 'exiting run' + ' ' + str(self)
+                postMessage(DEBUG_SLACK_CHANNEL, msg)
                 return
 
             if _run_scraper:
@@ -197,6 +197,38 @@ def schedule_etre():
         #http://stackoverflow.com/questions/29100568/how-can-i-stop-python
         #-script-without-killing-it
 
+def schedule_bh():
+
+    ##todo try catch for KeyBoard
+    sd = {0: {NORMAL_HOURS_KEY: ['0', '10'], PEAK_HOURS_KEY: ['2', '6']},\
+            1: {NORMAL_HOURS_KEY: ['0', '10'], PEAK_HOURS_KEY: ['2', '6']},\
+            2: {NORMAL_HOURS_KEY: ['0', '10'], PEAK_HOURS_KEY: ['2', '6']},\
+            3: {NORMAL_HOURS_KEY: ['0', '10'], PEAK_HOURS_KEY: ['2', '6']},\
+            4: {NORMAL_HOURS_KEY: ['0', '10'], PEAK_HOURS_KEY: ['2', '6']},\
+            5: {NORMAL_HOURS_KEY: ['0', '10']},\
+            6: {NORMAL_HOURS_KEY: ['0', '10']}}
+
+    test = Scheduler('belgian_happiness', sd, 'scrape_belgian_happiness.py')
+    t = threading.Thread( target=test.run, args=() )
+
+    try:
+        t.start()
+        while t.isAlive(): 
+            t.join(120) #todo longer wait?
+            print time.time()
+            #todo log we are waiting and active..?
+    except (KeyboardInterrupt, SystemExit):
+        print 'interrupted!!'
+        test.set_event_lock(True)
+        print test._is_event_lock_set()
+        print test
+        #todo better waiting mechanism for run to fall through
+        #test.join()
+        print test
+        print 'interrupted and done'
+        #http://stackoverflow.com/questions/29100568/how-can-i-stop-python
+        #-script-without-killing-it
+
 if __name__ == "__main__":
 
     if len( sys.argv ) > 1:
@@ -206,5 +238,7 @@ if __name__ == "__main__":
             schedule_etre()
         elif 'knl' in script_name:
             schedule_knl()
+        elif 'bh' in script_name:
+            schedule_bh()
         else:
             print 'invalid input'

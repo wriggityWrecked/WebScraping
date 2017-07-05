@@ -1,122 +1,135 @@
-from slackclient        import SlackClient
-from compareInventories import *
-from pprint             import pprint
-
 import os
 import subprocess
+from pprint import pprint
 
-logger               = logging.getLogger( __name__ )
-tokenFilePathAndName = os.path.join( os.path.dirname( __file__ ), 'slackToken' )
+from slackclient import SlackClient
 
-#so far link format only really works for prepend
-#this belongs in scraper
-def constructSlackMessageWithLink( resultsDictionary, linkFormat ):
+LOGGER = logging.getLogger(__name__)
+TOKEN_FILE_PATH_AND_NAME = os.path.join(
+    os.path.dirname(__file__), 'slackToken')
 
-	#minimum looks like
-	#{"addedLength": 0, "addedList": {}, "removedLength": 0, "removedList": {}}
-
-	added       = 0
-	addedList   = {}
-	removed     = 0
-	removedList = {}
-	message     = ""
-	ls          = linkFormat
-
-	if 'addedLength' in resultsDictionary and 'addedList' in resultsDictionary:
-		added     = int( resultsDictionary['addedLength'] )
-		addedList = resultsDictionary['addedList']
-
-	#--- todo this should be a function
-	if added > 0 and len( addedList ) > 0:
-		message = 'Added : ' + str( added )  + '\n\n\n'
-
-		if len( ls ) > 0:
-			#for now it's fine to append
-			for t in addedList.items():
-				message += str( t[1] ) + " : " + ls + str( t[0] ) + '\n\n'
-		else:
-			message += '\n\n'.join( ' : '.join( t ) for t in addedList.items() )
-	else:
-		#nothing added, so don't construct a message
-		return ''
-	#--- end function
+# so far link format only really works for prepend
+# this belongs in scraper
 
 
-	if 'removedLength' in resultsDictionary and 'removedList' in resultsDictionary:
-		removed     = int( resultsDictionary['removedLength'] )
-		removedList = resultsDictionary['removedList']
+def constructSlackMessageWithLink(resultsDictionary, linkFormat):
 
-	if removed > 0 and len( removedList ) > 0:
-		if len( message ) > 0:
-			message += '\n====================\n\n'
+    # minimum looks like
+    #{"addedLength": 0, "addedList": {}, "removedLength": 0, "removedList": {}}
 
-		message += 'Removed : ' + str( removed )  + '\n\n\n'
+    added = 0
+    addedList = {}
+    removed = 0
+    removedList = {}
+    message = ""
+    ls = linkFormat
 
-		if len( ls ) > 0:
-			#for now it's fine to append
-			for t in removedList.items():
-				message += str( t[1] ) + " : " + ls + str( t[0] ) + '\n\n'
-		else:
-			message += '\n\n'.join( ' : '.join( t ) for t in removedList.items() )
+    if 'addedLength' in resultsDictionary and 'addedList' in resultsDictionary:
+        added = int(resultsDictionary['addedLength'])
+        addedList = resultsDictionary['addedList']
 
-	return message
+    #--- todo this should be a function
+    if added > 0 and len(addedList) > 0:
+        message = 'Added : ' + str(added) + '\n\n\n'
 
-def constructSlackMessage( resultsDictionary ):
-	return constructSlackMessageWithLink( resultsDictionary, "" )
+        if len(ls) > 0:
+            # for now it's fine to append
+            for t in addedList.items():
+                message += str(t[1]) + " : " + ls + str(t[0]) + '\n\n'
+        else:
+            message += '\n\n'.join(' : '.join(t) for t in addedList.items())
+    else:
+        # nothing added, so don't construct a message
+        return ''
+    #--- end function
 
-def postMessage( channel, message ):
+    if 'removedLength' in resultsDictionary and 'removedList' in resultsDictionary:
+        removed = int(resultsDictionary['removedLength'])
+        removedList = resultsDictionary['removedList']
 
-	slackToken = "";
-	with open( tokenFilePathAndName ) as f:  
-		slackToken = str( f.read() ).strip()
+    if removed > 0 and len(removedList) > 0:
+        if len(message) > 0:
+            message += '\n====================\n\n'
 
-	sc = SlackClient( slackToken.strip() )
+        message += 'Removed : ' + str(removed) + '\n\n\n'
 
-	#check if token is empty
-	if not sc:
-		logger.warn( 'Empty SlackToken!' )
-		return
+        if len(ls) > 0:
+            # for now it's fine to append
+            for t in removedList.items():
+                message += str(t[1]) + " : " + ls + str(t[0]) + '\n\n'
+        else:
+            message += '\n\n'.join(' : '.join(t) for t in removedList.items())
 
-	#check channel
-	if not channel:
-		logger.warn( 'Empty channel!' )
-		return
+    return message
 
-	#check if message is empty
-	if not message:
-		logger.warn( 'Empty message!' )
-		return
 
-	output =  sc.api_call(
-	  'chat.postMessage',
-	  channel = '#' + channel,
-	  text    = message
-	)
-	logger.info( output )
+def constructSlackMessage(resultsDictionary):
+    return constructSlackMessageWithLink(resultsDictionary, "")
 
-def postResultsToSlackChannelWithLink( resultsDictionary, linkFormat, channelName ):
 
-	message = constructSlackMessageWithLink( resultsDictionary, linkFormat  )
-	postMessage( channelName, message )
+def postMessage(channel, message):
 
-def postResultsToSlackChannel( resultsDictionary, channelName ):
+    try:
+        slackToken = ""
+        with open(TOKEN_FILE_PATH_AND_NAME) as f:
+            slackToken = str(f.read()).strip()
 
-	message = constructSlackMessage( resultsDictionary )
-	postMessage( channelName, message )
+        sc = SlackClient(slackToken.strip())
 
-def test( fileName, linkFormat, channelName ):
+        # check if token is empty
+        if not sc:
+            LOGGER.warn('Empty SlackToken!')
+            return
 
-	rd      = resultsFile2Dictionary( fileName )
-	message = constructSlackMessage( rd )
+        # check channel
+        if not channel:
+            LOGGER.warn('Empty channel!')
+            return
 
-	if len( message ) > 0:
-		print 'sending ' + message
+        # check if message is empty
+        if not message:
+            LOGGER.warn('Empty message!')
+            return
 
-	print '\n================\n\n'
+        output = sc.api_call(
+            'chat.postMessage',
+            channel='#' + channel,
+            text=message
+        )
+        LOGGER.info(output)
 
-	rd      = resultsFile2Dictionary( fileName )
-	message = constructSlackMessageWithLink( rd, linkFormat )
+    except Exception as _e:
+        exc_type, exc_value, exec_tb = sys.exc_info()
+        LOGGER.warn('Caught '
+                    + str("".join(traceback.format_exception(
+                        exc_type, exc_value, exec_tb))))
 
-	if len( message ) > 0:
-		print 'sending ' + message
- 		postMessage( channelName, message )
+
+def postResultsToSlackChannelWithLink(resultsDictionary, linkFormat, channelName):
+
+    message = constructSlackMessageWithLink(resultsDictionary, linkFormat)
+    postMessage(channelName, message)
+
+
+def postResultsToSlackChannel(resultsDictionary, channelName):
+
+    message = constructSlackMessage(resultsDictionary)
+    postMessage(channelName, message)
+
+
+def test(fileName, linkFormat, channelName):
+
+    rd = resultsFile2Dictionary(fileName)
+    message = constructSlackMessage(rd)
+
+    if len(message) > 0:
+        print 'sending ' + message
+
+    print '\n================\n\n'
+
+    rd = resultsFile2Dictionary(fileName)
+    message = constructSlackMessageWithLink(rd, linkFormat)
+
+    if len(message) > 0:
+        print 'sending ' + message
+        postMessage(channelName, message)

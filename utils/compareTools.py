@@ -7,7 +7,6 @@ import logging
 from subprocess  import *
 from pprint      import pprint
 
-#todo rename to compareTools
 
 logger          = logging.getLogger(__name__)
 creationDateKey = 'creationDate'
