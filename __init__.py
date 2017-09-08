@@ -18,8 +18,9 @@ webscraping/
     tests/
         __init__.py
         testScraperSchedule.py
+        test_compare_tools.py
     utils/
         __init__.py
-        compareInventories.py
+        compare_tools.py
         getRandomUserAgent.py
         slackTools.py

@@ -13,7 +13,7 @@ from twisted.internet import reactor
 from scrapy.crawler import CrawlerRunner
 
 from utils import getRandomUserAgent
-from utils.compareInventories import compareInventories, dprint
+from utils.compare_tools import compare_inventory_files, dprint
 from utils.slackTools import postResultsToSlackChannel, postResultsToSlackChannelWithLink, postMessage
 
 DEBUG_SLACK_CHANNEL = 'robot_comms'
@@ -228,7 +228,7 @@ class Scraper(object):
         Process / Compare new results obtained from the associated Spider in this class.
         If the inventory file does not exist, then the new file becomes our inventory.
 
-        Otherwise, use the module compareInventories to obtain our added and removed
+        Otherwise, use the module compare_tools to obtain our added and removed
         items from inventory.
         """
 
@@ -255,9 +255,9 @@ class Scraper(object):
 
             # Both files exist, OK to compare
             logging.debug(
-                'compareInventories( ' + self.inventory_file_name + ", "\
+                'compare_inventory_files( ' + self.inventory_file_name + ", "\
                      + self.new_file_name + " )")
-            removed, added = compareInventories(
+            removed, added = compare_inventory_files(
                 self.inventory_file_name, self.new_file_name)
 
             # debug printing

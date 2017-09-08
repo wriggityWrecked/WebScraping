@@ -1,7 +1,9 @@
 import os
 import subprocess
-from pprint import pprint
+import logging
 
+from pprint import pprint
+from compare_tools import inventory_file_to_dictionary
 from slackclient import SlackClient
 
 LOGGER = logging.getLogger(__name__)
@@ -119,7 +121,7 @@ def postResultsToSlackChannel(resultsDictionary, channelName):
 
 def test(fileName, linkFormat, channelName):
 
-    rd = resultsFile2Dictionary(fileName)
+    rd = inventory_file_to_dictionary(fileName)
     message = constructSlackMessage(rd)
 
     if len(message) > 0:
@@ -127,7 +129,7 @@ def test(fileName, linkFormat, channelName):
 
     print '\n================\n\n'
 
-    rd = resultsFile2Dictionary(fileName)
+    rd = inventory_file_to_dictionary(fileName)
     message = constructSlackMessageWithLink(rd, linkFormat)
 
     if len(message) > 0:
