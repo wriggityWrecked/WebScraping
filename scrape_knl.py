@@ -9,17 +9,33 @@ Example:
 
 """
 
-from spiders.knl_spider import KnLBeerSpider
+from spiders.knl_beer_spider import KnLBeerSpider
+from spiders.knl_spirits_spider import KnLSpiritsSpider
+
 from scraper import Scraper
 
 
-def main():
+def beer_run():
     """Run the scraper as a standalone script."""
 
-    knl_scraper = Scraper('knl', KnLBeerSpider,
+    #todo load names from config, url from config, etc
+    knl_beer_scraper = Scraper('knl', KnLBeerSpider,
 					'http://www.klwines.com/p/i?i=', 'knlscraper')
-    print knl_scraper.one_shot()
 
+    print knl_beer_scraper.one_shot()	
+
+def spirits_run():
+    """Run the scraper as a standalone script."""
+
+    #todo load names from config, url from config, etc
+    knl_spirits_scraper = Scraper('knlSpirits', KnLSpiritsSpider,
+					'http://www.klwines.com/p/i?i=', 'knlspiritsscraper')
+    
+    print knl_spirits_scraper.one_shot()	
+
+def main():
+	#beer_run()
+	spirits_run()
 
 if __name__ == "__main__":
     main()

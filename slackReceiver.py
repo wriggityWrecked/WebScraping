@@ -12,11 +12,6 @@ import traceback
 import sys
 import threading
 
-import scrapeKnl
-import scrapeEtre
-import scrapeBelgianHappiness
-import scrapeBiab
-
 from utils import robotTextResponses
 
 #todo import from tools
@@ -28,7 +23,7 @@ commandChannel       = 'C4UC35TLN'
 dbId                 = 'U4SDBCXBJ'
 debugSlackChannel    = 'robot_comms'
 scrapeKey            = 'scrape'
-scrapeOptionsMap     = { 'knl' : scrapeKnl, 'etre' : scrapeEtre, 'bh' : scrapeBelgianHappiness, 'biab' : scrapeBiab }
+#scrapeOptionsMap     = { 'knl' : scrapeKnl, 'etre' : scrapeEtre, 'bh' : scrapeBelgianHappiness, 'biab' : scrapeBiab }
 helpKey1             = 'help'
 helpKey2             = '?'
 maxKeepAlive         = 60
@@ -136,14 +131,16 @@ def handleHelp():
 	return helpMessage
 
 def sendReply( sc, ts, channelId, replyText ):
+	"""http://slackapi.github.io/python-slackclient/real_time_messaging.html#connecting-to-the-real-time-messaging-api"""
 
 	logger.debug( ts + ' ' + channelId + ' ' + replyText )
-
+	#sc.rtm_send_message(replyText, channelId, ts, True) -- fails
 	output = sc.api_call(
 	  'chat.postMessage',
 	  ts         = ts,
 	  channel    = channelId,
-	  text       = replyText
+	  text       = replyText,
+      reply_broadcast=True
 	)
 	logger.debug( output )
 
@@ -156,11 +153,13 @@ def main():
 	with open( tokenFilePathAndName ) as f:  
 		slackToken = str( f.read() ).strip()
 
+	print slackToken
 	sc = SlackClient( slackToken )
 	#todo post hello
 
 	if sc.rtm_connect():
 
+		print sc.server
 		keepAliveCount = 0
 
 		while True:

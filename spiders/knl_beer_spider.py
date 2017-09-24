@@ -1,7 +1,7 @@
 """KNL Spider implementation.
 
 Example:
-	$ scrapy runspider knl_spider.py -o output.json
+    $ scrapy runspider knl_beer_spider.py -o output.json
 
 """
 
@@ -30,7 +30,7 @@ class KnLBeerSpider(scrapy.Spider):
     def start_requests(self):
 
         urls = [
-            'http://www.klwines.com/Products/r?&r=4294956886+82&&o=3&z=False'  # url for all beer
+            'http://www.klwines.com/Products/r?&r=4294956886+82&&o=3&z=False' # url for all beer
         ]
 
         logging.getLogger(__name__)
@@ -68,13 +68,13 @@ class KnLBeerSpider(scrapy.Spider):
 
                     # filter out location in the name, specific to these scraped results
                     if beer_name != "Redwood City" and beer_name != "Hollywood" \
-                    		and beer_name != "San Francisco" and 'Read More ' not in beer_name:
+                            and beer_name != "San Francisco" and 'Read More ' not in beer_name:
 
                         if not self.date_entry:
                             self.date_entry = True
                             yield {
                                 'creationDate': \
-                                	datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+                                    datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
                             }
 
                         yield {

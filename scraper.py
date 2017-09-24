@@ -12,9 +12,10 @@ from enum import Enum
 from twisted.internet import reactor
 from scrapy.crawler import CrawlerRunner
 
-from utils import getRandomUserAgent
+from utils import get_random_user_agent
 from utils.compare_tools import compare_inventory_files, dprint
-from utils.slackTools import postResultsToSlackChannel, postResultsToSlackChannelWithLink, postMessage
+from utils.slackTools import postResultsToSlackChannel, postResultsToSlackChannelWithLink
+from utils.slack_tools import post_message
 
 DEBUG_SLACK_CHANNEL = 'robot_comms'
 
@@ -110,7 +111,7 @@ class Scraper(object):
         # set format
         logging.basicConfig(filename=self.log_name, filemode='w', level=logging.INFO,
                             format='%(asctime)s:%(levelname)s:%(message)s', datefmt='%Y-%m-%dT%H:%M:%S')
-        self.logger.setLevel(logging.INFO)
+        self.logger.setLevel(logging.DEBUG)
 
 
     def setStage(self, newStage):
@@ -177,11 +178,11 @@ class Scraper(object):
                 self.run_event.clear()
 
                 # post debug message to slack
-                postMessage(DEBUG_SLACK_CHANNEL, 'Starting scraper ' + self.name)
+                post_message(DEBUG_SLACK_CHANNEL, 'Starting scraper ' + self.name)
 
                 #configure_logging( {'LOG_FORMAT': '%(levelname)s: %(message)s'} )
                 runner = CrawlerRunner({
-                    'USER_AGENT': getRandomUserAgent.getUserAgent(),
+                    'USER_AGENT': get_random_user_agent.get_random_user_agent(),
                     'FEED_FORMAT': 'json',
                     'FEED_URI': self.new_file_name,
                     'AUTOTHROTTLE_ENABLED': 'True',
@@ -217,6 +218,8 @@ class Scraper(object):
                 #todo don't return here, just fire an event that we are done
                 return True, None
 
+        except KeyboardInterrupt:
+            raise KeyboardInterrupt("KeyboardInterrupt caught in runSpider")
         except Exception as _e:
             exc_type, exc_value, exec_tb = sys.exc_info()
             return False, 'Caught ' \
@@ -316,7 +319,7 @@ class Scraper(object):
             added_removed = 'Added: ' + str(results['addedLength']) + \
                 ', Removed: ' + str(results['removedLength'])
             # post to debug slack
-            postMessage(DEBUG_SLACK_CHANNEL, 'Finished crawler ' + self.name \
+            post_message(DEBUG_SLACK_CHANNEL, 'Finished crawler ' + self.name \
                 + ', ' + added_removed + ', time taken = '\
                 + str(timedelta(seconds=(time.time() - self.start_time))))
 
@@ -332,7 +335,7 @@ class Scraper(object):
 
         try:
 
-            postMessage(DEBUG_SLACK_CHANNEL, error_message)
+            post_message(DEBUG_SLACK_CHANNEL, error_message)
             return True, None
 
         except Exception:
@@ -390,6 +393,8 @@ class Scraper(object):
         channel. 
 
         This does not block!
+
+        TODO this should be removed / deprecated 
         """
         self.initialize()
         self.setStage(ScraperStage.RUNNING)
@@ -408,7 +413,9 @@ class Scraper(object):
 
 
     def one_shot(self):
-        """ Blocking run.
+        """ Blocking run. AKA ONESHOT
+
+        TODO rename as run
         """
         self.initialize()
         self.setStage(ScraperStage.RUNNING)

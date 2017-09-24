@@ -14,13 +14,14 @@ webscraping/
         biabSpider.py
         cantillionSpider.py
         etreSpider.py
-        knl_spider.py
+        knl_spiders.py
     tests/
         __init__.py
-        testScraperSchedule.py
+        test_schedule.py
         test_compare_tools.py
     utils/
         __init__.py
         compare_tools.py
         getRandomUserAgent.py
         slackTools.py
+        slack_tools.py

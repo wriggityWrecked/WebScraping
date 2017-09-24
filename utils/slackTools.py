@@ -4,11 +4,10 @@ import logging
 
 from pprint import pprint
 from compare_tools import inventory_file_to_dictionary
+from slack_tools import post_message
 from slackclient import SlackClient
 
 LOGGER = logging.getLogger(__name__)
-TOKEN_FILE_PATH_AND_NAME = os.path.join(
-    os.path.dirname(__file__), 'slackToken')
 
 # so far link format only really works for prepend
 # this belongs in scraper
@@ -67,45 +66,6 @@ def constructSlackMessageWithLink(resultsDictionary, linkFormat):
 
 def constructSlackMessage(resultsDictionary):
     return constructSlackMessageWithLink(resultsDictionary, "")
-
-
-def postMessage(channel, message):
-
-    try:
-        slackToken = ""
-        with open(TOKEN_FILE_PATH_AND_NAME) as f:
-            slackToken = str(f.read()).strip()
-
-        sc = SlackClient(slackToken.strip())
-
-        # check if token is empty
-        if not sc:
-            LOGGER.warn('Empty SlackToken!')
-            return
-
-        # check channel
-        if not channel:
-            LOGGER.warn('Empty channel!')
-            return
-
-        # check if message is empty
-        if not message:
-            LOGGER.warn('Empty message!')
-            return
-
-        output = sc.api_call(
-            'chat.postMessage',
-            channel='#' + channel,
-            text=message
-        )
-        LOGGER.info(output)
-
-    except Exception as _e:
-        exc_type, exc_value, exec_tb = sys.exc_info()
-        LOGGER.warn('Caught '
-                    + str("".join(traceback.format_exception(
-                        exc_type, exc_value, exec_tb))))
-
 
 def postResultsToSlackChannelWithLink(resultsDictionary, linkFormat, channelName):
 

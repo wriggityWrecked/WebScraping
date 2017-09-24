@@ -71,6 +71,7 @@ class Scheduler(object):
         self.stage = SchedulerStage.EXECUTING
         print self
         subprocess.call(["python", self.scraper_script])
+        #todo this should be a process
         self.number_of_times_run += 1
         #todo time this
         self.stage = SchedulerStage.RUNNING
@@ -228,6 +229,19 @@ def schedule_bh():
         print 'interrupted and done'
         #http://stackoverflow.com/questions/29100568/how-can-i-stop-python
         #-script-without-killing-it
+
+def startProcesses():
+
+    #todo
+
+    #consturct a shared multiprocessing queue
+
+    #start KnL process as daemon
+    #start Etre as daemon
+
+    #handle the queue entries as a non-daemon, we only care about
+    #scraping and posting results until the end of time
+
 
 if __name__ == "__main__":
 
