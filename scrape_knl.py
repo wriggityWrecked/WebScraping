@@ -5,9 +5,11 @@ scraper (KNL) and run it. The main function will exit
 when the scraper has completed its one_shot function.
 
 Example:
-	$ python scrape_knl.py
+    $ python scrape_knl.py
 
 """
+
+import argparse
 
 from spiders.knl_beer_spider import KnLBeerSpider
 from spiders.knl_spirits_spider import KnLSpiritsSpider
@@ -16,26 +18,46 @@ from scraper import Scraper
 
 
 def beer_run():
-    """Run the scraper as a standalone script."""
+    """Run the scraper as a standalone script. This method block until finished"""
 
-    #todo load names from config, url from config, etc
+    # todo load names from config, url from config, etc
     knl_beer_scraper = Scraper('knl', KnLBeerSpider,
-					'http://www.klwines.com/p/i?i=', 'knlscraper')
+                               'http://www.klwines.com/p/i?i=', 'knlscraper')
 
-    print knl_beer_scraper.one_shot()	
+    print knl_beer_scraper.one_shot()
+
 
 def spirits_run():
-    """Run the scraper as a standalone script."""
+    """Run the scraper as a standalone script. This method block until finished"""
 
-    #todo load names from config, url from config, etc
+    # todo load names from config, url from config, etc
     knl_spirits_scraper = Scraper('knlSpirits', KnLSpiritsSpider,
-					'http://www.klwines.com/p/i?i=', 'knlspiritsscraper')
-    
-    print knl_spirits_scraper.one_shot()	
+                                  'http://www.klwines.com/p/i?i=', 'knlspiritsscraper')
 
-def main():
-	#beer_run()
-	spirits_run()
+    print knl_spirits_scraper.one_shot()
+
+
+def run_both():
+    """Run both beer and spirits scraper. This method block until finished"""
+
+    beer_run()
+    spirits_run()
+
 
 if __name__ == "__main__":
-    main()
+
+    parser = argparse.ArgumentParser(
+        description='Scrape KnL beer, spirits, or both')
+    parser.add_argument('scraper_type', metavar='Scraper Type',
+                        help='The scraper type (calling a spider) to run: beer, spirits, or both',
+                        choices=['beer', 'spirits', 'both'])
+    scraper_type = parser.parse_args().scraper_type
+
+    if scraper_type == 'beer':
+        beer_run()
+    elif scraper_type == 'spirits':
+        spirits_run()
+    elif scraper_type == 'both':
+        run_both()
+    else:
+        print('Unrecongized option: ' + str(scraper_type))

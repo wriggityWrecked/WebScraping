@@ -19,6 +19,8 @@ LOGGER.addHandler(logging.StreamHandler(sys.stdout))
 TOKEN_FILE_PATH_AND_NAME = os.path.join(
     os.path.dirname(__file__), 'slackToken')
 
+DEBUG_SLACK_CHANNEL = 'robot_comms'
+
 
 class SlackPost(object):
 
