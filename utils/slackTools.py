@@ -5,7 +5,6 @@ import logging
 from pprint import pprint
 from compare_tools import inventory_file_to_dictionary
 from slack_tools import post_message
-from slackclient import SlackClient
 
 LOGGER = logging.getLogger(__name__)
 
@@ -70,13 +69,13 @@ def constructSlackMessage(resultsDictionary):
 def postResultsToSlackChannelWithLink(resultsDictionary, linkFormat, channelName):
 
     message = constructSlackMessageWithLink(resultsDictionary, linkFormat)
-    postMessage(channelName, message)
+    post_message(channelName, message)
 
 
 def postResultsToSlackChannel(resultsDictionary, channelName):
 
     message = constructSlackMessage(resultsDictionary)
-    postMessage(channelName, message)
+    post_message(channelName, message)
 
 
 def test(fileName, linkFormat, channelName):
@@ -94,4 +93,4 @@ def test(fileName, linkFormat, channelName):
 
     if len(message) > 0:
         print 'sending ' + message
-        postMessage(channelName, message)
+        post_message(channelName, message)

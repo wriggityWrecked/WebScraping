@@ -11,6 +11,7 @@ Example:
 
 import logging
 import os
+
 from random import randint
 
 USER_AGENT_FILE = os.path.join(os.path.dirname(__file__), './userAgentList.txt')

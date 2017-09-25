@@ -62,7 +62,8 @@ class Scheduler(object):
             return self.event.isSet()
 
 
-    def run_scraper(self):
+    def 
+    (self):
 
         #launch a sub process, because the twisted reactor
         #won't accept new jobs after run is called
@@ -71,7 +72,7 @@ class Scheduler(object):
         self.stage = SchedulerStage.EXECUTING
         print self
         subprocess.call(["python", self.scraper_script])
-        #todo this should be a process
+        #todo this should be a blocking call, e.g. one shot
         self.number_of_times_run += 1
         #todo time this
         self.stage = SchedulerStage.RUNNING

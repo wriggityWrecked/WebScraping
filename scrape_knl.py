@@ -5,20 +5,20 @@ scraper (KNL) and run it. The main function will exit
 when the scraper has completed its one_shot function.
 
 Example:
-    $ python scrape_knl.py
+    $ python scrape_knl.py -h
 
 """
 
 import argparse
 
+from multiprocessing import Process
 from spiders.knl_beer_spider import KnLBeerSpider
 from spiders.knl_spirits_spider import KnLSpiritsSpider
-
 from scraper import Scraper
 
 
 def beer_run():
-    """Run the scraper as a standalone script. This method block until finished"""
+    """Run the scraper as a standalone script. This method blocks until finished"""
 
     # todo load names from config, url from config, etc
     knl_beer_scraper = Scraper('knl', KnLBeerSpider,
@@ -28,7 +28,7 @@ def beer_run():
 
 
 def spirits_run():
-    """Run the scraper as a standalone script. This method block until finished"""
+    """Run the scraper as a standalone script. This method blocks until finished"""
 
     # todo load names from config, url from config, etc
     knl_spirits_scraper = Scraper('knlSpirits', KnLSpiritsSpider,
@@ -38,11 +38,20 @@ def spirits_run():
 
 
 def run_both():
-    """Run both beer and spirits scraper. This method block until finished"""
+    """Run both beer and spirits scraper. This method blocks until finished.
+    Must be done in separate processes."""
 
-    beer_run()
-    spirits_run()
+    print('\nRunning both\nStarting beer\n')
 
+    _p = Process(target=beer_run, args=())
+    _p.start()
+    _p.join()
+
+    print('\nFinished beer\nStarting spirits\n')
+
+    _p = Process(target=spirits_run, args=())
+    _p.start()
+    _p.join()
 
 if __name__ == "__main__":
 
