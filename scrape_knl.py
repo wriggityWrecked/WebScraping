@@ -61,12 +61,17 @@ def run_continuous():
     Hackish method to run manually via command line with a random sleep interval. 
     """
     
-    while True:
-        time.sleep(1)
-        run_both()
-        random_wait_minutes = randint(10, 40) * 60 #uniform, configurable or provide input?
-        print('\nSleeping ' + str(random_wait_minutes) + ' minutes\n')
-        time.sleep(random_wait_minutes)
+    try:
+        while True:
+
+            time.sleep(1)
+            run_both()
+            random_wait_minutes = randint(10, 40) #uniform, configurable or provide input?
+            print('\nSleeping ' + str(random_wait_minutes) + ' minutes\n')
+            time.sleep(random_wait_minutes * 60)
+
+    except KeyboardInterrupt:
+        print '\nKeyboardInterrupt caugh, exiting\n'
 
 if __name__ == "__main__":
 
