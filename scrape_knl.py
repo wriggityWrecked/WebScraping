@@ -24,7 +24,7 @@ def beer_run():
     knl_beer_scraper = Scraper('knl', KnLBeerSpider,
                                'http://www.klwines.com/p/i?i=', 'knlscraper')
 
-    print knl_beer_scraper.one_shot()
+    print knl_beer_scraper.run()
 
 
 def spirits_run():
@@ -34,7 +34,7 @@ def spirits_run():
     knl_spirits_scraper = Scraper('knlSpirits', KnLSpiritsSpider,
                                   'http://www.klwines.com/p/i?i=', 'knlspiritsscraper')
 
-    print knl_spirits_scraper.one_shot()
+    print knl_spirits_scraper.run()
 
 
 def run_both():
