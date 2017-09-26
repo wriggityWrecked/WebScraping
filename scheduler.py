@@ -145,7 +145,7 @@ def schedule_knl():
             5: {NORMAL_HOURS_KEY: ['8', '20']},\
             6: {NORMAL_HOURS_KEY: ['9', '20']}}
 
-    test = Scheduler('knl', sd, 'scrape_knl.py')
+    test = Scheduler('knl', sd, 'scrape_knl.py') #todo needs input queue
     t = threading.Thread( target=test.run, args=() )
 
     #todo a scheduler should handle this thread
