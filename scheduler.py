@@ -3,13 +3,13 @@ import time
 import datetime
 import signal
 import subprocess
+import scrape_knl
 
 from enum import Enum
 from schedule import *
-from spiders.knl_spider import KnLBeerSpider
-from scraper import *
-from utils.slackTools import postMessage
+from utils.slack_tools import post_message
 
+RUN_METHOD_DICT = { "knl" : scra}
 
 class SchedulerStage(Enum):
 
@@ -22,7 +22,7 @@ class SchedulerStage(Enum):
 
 class Scheduler(object):
 
-    def __init__(self, name, schedule_dictionary, scraper_script):
+    def __init__(self, name, schedule_dictionary, module_name):
 
         self.schedule_dictionary = schedule_dictionary
         self.time_last_ran = 0
@@ -32,7 +32,7 @@ class Scheduler(object):
         self.event_lock = threading.RLock()
         self.name = name
         self.stage = SchedulerStage.CREATED
-        self.scraper_script = scraper_script
+        self.module_name = module_name
         # todo validate input dictionary
 
     def __str__(self):
@@ -62,8 +62,7 @@ class Scheduler(object):
             return self.event.isSet()
 
 
-    def 
-    (self):
+    def run(self):
 
         #launch a sub process, because the twisted reactor
         #won't accept new jobs after run is called
@@ -71,7 +70,10 @@ class Scheduler(object):
         #todo new thread and monitor if need be
         self.stage = SchedulerStage.EXECUTING
         print self
-        subprocess.call(["python", self.scraper_script])
+        #using another process because the twisted reactor cannot be restarted
+        _p = Process(target=beer_run, args=())
+        _p.start()
+        _p.join()        
         #todo this should be a blocking call, e.g. one shot
         self.number_of_times_run += 1
         #todo time this
@@ -79,7 +81,7 @@ class Scheduler(object):
 
     def run(self):
 
-        postMessage(DEBUG_SLACK_CHANNEL, "starting schedule for " + self.name)
+        post_message(DEBUG_SLACK_CHANNEL, "starting schedule for " + self.name)
         self.stage = SchedulerStage.RUNNING
 
         while not self._is_event_lock_set():
@@ -89,7 +91,7 @@ class Scheduler(object):
             if self.number_of_times_run == 0:
                 print 'running first scraper'
                 self.run_scraper()
-                postMessage(DEBUG_SLACK_CHANNEL, str(self))
+                post_message(DEBUG_SLACK_CHANNEL, str(self))
 
 
             print self
@@ -107,14 +109,17 @@ class Scheduler(object):
                 msg = self.name + 'waiting ' + str(datetime.timedelta(\
                     seconds=delay_seconds)) + ' to run scraper'
                 print msg
-                postMessage(DEBUG_SLACK_CHANNEL, msg)
+                post_message(DEBUG_SLACK_CHANNEL, msg)
             else:
+
+                #DON"T SLEEP: https://stackoverflow.com/questions/2398661/schedule-a-repeating-event-in-python-3
+
                 self.stage = SchedulerStage.DELAYING
                 delay_seconds = getSecondsUntilNextDay()
                 msg = self.name + 'waiting ' + str(datetime.timedelta(\
                     seconds=delay_seconds)) + ' until next day'
                 print msg
-                postMessage(DEBUG_SLACK_CHANNEL, msg)
+                post_message(DEBUG_SLACK_CHANNEL, msg)
 
             self.number_of_times_waited += 1
             self.event.wait(timeout=delay_seconds)
@@ -123,14 +128,14 @@ class Scheduler(object):
                 self.stage = SchedulerStage.TERMINATED
                 print self
                 msg = self.name + 'exiting run' + ' ' + str(self)
-                postMessage(DEBUG_SLACK_CHANNEL, msg)
+                post_message(DEBUG_SLACK_CHANNEL, msg)
                 return
 
             if _run_scraper:
                 self.run_scraper()
 
             print self
-            postMessage(DEBUG_SLACK_CHANNEL, str(self))
+            post_message(DEBUG_SLACK_CHANNEL, str(self))
 
         print 'no run'
 
@@ -145,7 +150,7 @@ def schedule_knl():
             5: {NORMAL_HOURS_KEY: ['8', '20']},\
             6: {NORMAL_HOURS_KEY: ['9', '20']}}
 
-    test = Scheduler('knl', sd, 'scrape_knl.py') #todo needs input queue
+    test = Scheduler('knl', sd, 'scrape_knl') #todo needs input queue
     t = threading.Thread( target=test.run, args=() )
 
     #todo a scheduler should handle this thread
@@ -235,7 +240,7 @@ def startProcesses():
 
     #todo
 
-    #consturct a shared multiprocessing queue
+    #construct a shared multiprocessing queue
 
     #start KnL process as daemon
     #start Etre as daemon

@@ -7,6 +7,7 @@ import threading
 import sys
 import logging
 import traceback
+import argparse
 
 from multiprocessing import Queue
 from Queue import Empty
@@ -104,6 +105,7 @@ def post_message(channel, message):
                     + str("".join(traceback.format_exception(
                         exc_type, exc_value, exec_tb))))
 
+#todo input token path
 
 def post_message_with_client(slack_client, channel, message):
 
@@ -129,7 +131,21 @@ def post_message_with_client(slack_client, channel, message):
 
 
 def main():
-	print('todo take keyword args for message, channel and post to slack')
+    parser = argparse.ArgumentParser(
+        description='Post to a slack channel given said channel and slack token')
+    parser.add_argument('channel', metavar='Channel Name',
+                        help='The channel in which to post a message')
+    parser.add_argument('message', metavar='Message to Post',
+                        help='The message to post to a slack channel')
+    #todo optional token
+    # parser.add_argument('--token', metavar='Slack Token File Path',
+    #                     help='The path and name of the slack token for authentication')
+    
+    channel = parser.parse_args().channel
+    message = parser.parse_args().message
+
+    post_message(channel, message)
+
 
 if __name__ == "__main__":
 	main()

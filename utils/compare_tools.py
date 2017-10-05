@@ -29,6 +29,10 @@ def compare_map(old_map, new_map):
     removed_entries = {}
     new_entries = {}
 
+    #todo evauluate python sets
+    #https://docs.python.org/2/library/sets.html
+    #https://wiki.python.org/moin/TimeComplexity
+
     for entry in new_map.keys():
         # check if in oldMap
         if entry not in old_map:
@@ -98,6 +102,7 @@ def compare_inventory_files(inventory_file, new_file):
         logging.error(str(new_file) + ' is empty!')
         return removed, new
 
+    #unlikely
     if filecmp.cmp(inventory_file, new_file, shallow=False):
         logging.info(str(inventory_file) + ' is equal to ' +
                      str(new_file) + ', no differences!')

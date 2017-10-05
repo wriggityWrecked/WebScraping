@@ -201,15 +201,17 @@ class Scraper(object):
             _d = runner.crawl(self.spider)
 
             # stop the reactor when we're done
-            _d.addBoth(lambda _: reactor.stop())
-
+            _d.addBoth(lambda _: reactor.stop()) 
+            #http://twistedmatrix.com/documents/9.0.0/core/howto/deferredindepth.html#auto7
+            #https://twistedmatrix.com/documents/17.9.0/api/twisted.internet.defer.Deferred.html
+            
             reactor.run()
             # this will block until stop is called / when the crawler is done
 
             return True, None
 
         except KeyboardInterrupt:
-            raise KeyboardInterrupt("KeyboardInterrupt caught in run_spider")
+            raise KeyboardInterrupt("KeyboardInterrupt caught in run")
         except Exception as _e:
             exc_type, exc_value, exec_tb = sys.exc_info()
             return False, 'Caught ' \
