@@ -72,6 +72,18 @@ class Scraper(object):
 
         self.start_time = 0
 
+        self.debug_log = False
+        self.debug_slack = False
+
+
+    def set_debug_log(self, debug_log):
+        self.debug_log = debug_log
+
+
+    def set_debug_slack(self, debug_slack):
+        self.debug_slack = debug_slack
+
+
     def initialize(self):
         """
         Setup everything necessary for each run. Mainly file system folders,
@@ -119,7 +131,9 @@ class Scraper(object):
         # set format
         logging.basicConfig(filename=self.log_name, filemode='w', level=logging.INFO,
                             format='%(asctime)s:%(levelname)s:%(message)s', datefmt='%Y-%m-%dT%H:%M:%S')
-        self.logger.setLevel(logging.DEBUG)
+
+        if self.debug_log:
+            self.logger.setLevel(logging.DEBUG)
 
 
     def set_stage(self, new_stage):
@@ -185,7 +199,8 @@ class Scraper(object):
             self.start_time = time.time()
 
             # post debug message to slack
-            post_message(DEBUG_SLACK_CHANNEL, 'Starting scraper ' + self.name)
+            if self.debug_slack:
+                post_message(DEBUG_SLACK_CHANNEL, 'Starting scraper ' + self.name)
 
             #configure_logging( {'LOG_FORMAT': '%(levelname)s: %(message)s'} )
             runner = CrawlerRunner({
@@ -310,7 +325,8 @@ class Scraper(object):
             added_removed = 'Added: ' + str(results['addedLength']) + \
                 ', Removed: ' + str(results['removedLength'])
             # post to debug slack
-            post_message(DEBUG_SLACK_CHANNEL, 'Finished crawler ' + self.name
+            if self.debug_slack:
+                post_message(DEBUG_SLACK_CHANNEL, 'Finished crawler ' + self.name
                          + ', ' + added_removed + ', time taken = '
                          + str(timedelta(seconds=(time.time() - self.start_time))))
 
@@ -327,8 +343,8 @@ class Scraper(object):
         """
 
         try:
-
-            post_message(DEBUG_SLACK_CHANNEL, error_message)
+            if self.debug_slack:
+                post_message(DEBUG_SLACK_CHANNEL, error_message)
             return True, None
 
         except Exception:
