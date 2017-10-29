@@ -21,66 +21,69 @@ from spiders.knl_spirits_spider import KnLSpiritsSpider
 from spiders.etreSpider import EtreSpider
 from spiders.etreSpider import EtreSpider
 from spiders.belgianHappinessSpider import BelgianHappinessSpider
+from spiders.biabSpider import BelgiumInABox
 
 from scraper import Scraper
 
-def knl_beer(debug_flag):
+
+def knl_beer(debug_flag=False, multiprocessing_queue=None):
     """Run the scraper as a standalone script. This method blocks until finished"""
 
-    # todo load names from config, url from config, etc
+    #todo should be renamed
     knl_beer_scraper = Scraper('knl', KnLBeerSpider,
-                               'http://www.klwines.com/p/i?i=', 'knlscraper')
+                               'knlscraper', 'http://www.klwines.com/p/i?i=', multiprocessing_queue=multiprocessing_queue)
     knl_beer_scraper.set_debug_log(debug_flag)
     knl_beer_scraper.set_debug_slack(debug_flag)
 
     print knl_beer_scraper.run()
 
 
-def knl_spirits(debug_flag):
+def knl_spirits(debug_flag=False, multiprocessing_queue=None):
     """Run the scraper as a standalone script. This method blocks until finished"""
 
-    # todo load names from config, url from config, etc
     knl_spirits_scraper = Scraper('knlSpirits', KnLSpiritsSpider,
-                                  'http://www.klwines.com/p/i?i=', 'knlspiritsscraper')
+                                   'knlspiritsscraper','http://www.klwines.com/p/i?i=',
+                                    multiprocessing_queue=multiprocessing_queue)
     knl_spirits_scraper.set_debug_log(debug_flag)
     knl_spirits_scraper.set_debug_slack(debug_flag)
 
     print knl_spirits_scraper.run()
 
 
-def etre(debug_flag):
+def etre(debug_flag=False, multiprocessing_queue=None):
     """Run the scraper as a standalone script. This method blocks until finished"""
     
     etre_scraper = Scraper('etre', EtreSpider,
-                    'http://www.bieresgourmet.be/catalog/index.php?main_page\
-                    =product_info&products_id=', 'etrescraper')
+                    'etrescraper', 'http://www.bieresgourmet.be/catalog/index.php?main_page\
+                    =product_info&products_id=', multiprocessing_queue=multiprocessing_queue)
     etre_scraper.set_debug_log(debug_flag)
     etre_scraper.set_debug_slack(debug_flag)
 
     print etre_scraper.run()
 
 
-def biab(debug_flag):
+def biab(debug_flag=False, multiprocessing_queue=None):
     """Run the scraper as a standalone script. This method blocks until finished"""
 
-    biab_scraper = Scraper('biab', BelgiumInABox, "", 'biabscraper')
+    biab_scraper = Scraper('biab', BelgiumInABox, 'biabscraper', multiprocessing_queue=multiprocessing_queue)
     biab_scraper.set_debug_log(debug_flag)
     biab_scraper.set_debug_slack(debug_flag)
 
     print biab_scraper.run()
 
 
-def belgium_happiness(debug_flag):
+def belgium_happiness(debug_flag=False, multiprocessing_queue=None):
     """Run the scraper as a standalone script. This method blocks until finished"""
 
-    bh_scraper = Scraper( 'belgianHappiness', BelgianHappinessSpider, "", 'belgianHappiness')
+    bh_scraper = Scraper('belgianHappiness', BelgianHappinessSpider, 'belgianhappiness', 
+        multiprocessing_queue=multiprocessing_queue)
     bh_scraper.set_debug_log(debug_flag)
     bh_scraper.set_debug_slack(debug_flag)
 
     print bh_scraper.run()
 
 
-def run(methods_to_run, debug_flag):
+def run(methods_to_run, debug_flag=False, multiprocessing_queue=None):
     """Run input method(s) as a process. This method blocks until finished.
     Must be done in separate processes due to twisted reactor behavior.
 
@@ -96,7 +99,7 @@ def run(methods_to_run, debug_flag):
         print('\nFinished ' + str(method) + '\n')
 
 
-def run_continuous(methods_to_run, debug_flag):
+def run_continuous(methods_to_run, debug_flag=False):
     """
     Hackish method to run manually via command line with a random sleep interval. 
     """
@@ -106,7 +109,7 @@ def run_continuous(methods_to_run, debug_flag):
 
             run(methods_to_run, debug_flag)
 
-            random_wait_minutes = randint(5*60, 20*60) #todo configurable range?
+            random_wait_minutes = randint(4*60, 10*60) #todo configurable range?
             minutes = int(random_wait_minutes / 60.)
             seconds = int((random_wait_minutes / 60. - minutes) * 60)
             now = datetime.now()
@@ -127,15 +130,14 @@ if __name__ == "__main__":
         etre.__name__: etre, biab.__name__: biab, belgium_happiness.__name__: belgium_happiness}
 
     parser = argparse.ArgumentParser(
-        description='Invoke implemented scrapers by name.')
+        description='Invoke implemented scrapers by name with run options.')
 
     parser.add_argument('scraper_names', metavar='Scraper Name(s)', nargs='+',
-                        help='The scraper name (calling a spider) to run. Choices: ' 
-                        + ', '.join(methods.keys()),
-                        choices=methods.keys())
+                        choices=methods.keys(),
+                        help='The scraper name (calling a spider) to run. Choices: %(choices)s')
 
     parser.add_argument('-c', "--continuous", action='store_true',
-                        help='Run the specified scraper(s) continuously')
+                        help='Run the specified scraper(s) continuously. Default is to only run once')
 
     parser.add_argument('-d', "--debug", action='store_true',
                         help='Run the specified scraper(s) in debug mode')

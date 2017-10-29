@@ -48,7 +48,7 @@ class Scraper(object):
 
     'Base class for all scrapers'
 
-    def __init__(self, name, spider, product_link, slack_channel):
+    def __init__(self, name, spider, slack_channel, product_link=None, multiprocessing_queue=None):
 
         self.__stage_lock = threading.Lock()
         self.stage = ScraperStage.CREATED #todo private access so public getter with lock?
@@ -65,6 +65,10 @@ class Scraper(object):
 
         # slack channel name used to post results
         self.slack_channel = slack_channel
+
+        #multiprocessing queue to post results, used among the various processes
+        #to share a slack connection via slack tools
+        self.multiprocessing_queue = multiprocessing_queue
 
         # base directory of scraper results
         self.base_directory = os.path.join(
@@ -184,6 +188,7 @@ class Scraper(object):
         if os.path.isfile(self.new_file_name):
             logging.warn(self.new_file_name + ' + already exists!')
 
+
     def run_spider(self):
         """
         Rather than using scrapyd or executing the spider manually via scrapy,
@@ -231,6 +236,7 @@ class Scraper(object):
             exc_type, exc_value, exec_tb = sys.exc_info()
             return False, 'Caught ' \
                 + str("".join(traceback.format_exception(exc_type, exc_value, exec_tb)))
+
 
     def process_spider_results(self):
         """
@@ -306,6 +312,7 @@ class Scraper(object):
             return False, 'Caught ' \
                 + str("".join(traceback.format_exception(exc_type, exc_value, exec_tb)))
 
+
     def post_to_slack(self, results, slack_channel):
         """
         Construct a results string, from the input, and post to the input Slack channel.
@@ -316,7 +323,7 @@ class Scraper(object):
             self.set_stage(ScraperStage.POSTING_RESULTS)
 
             # post to slack
-            if not self.product_link:
+            if self.product_link is not None and not self.product_link:
                 postResultsToSlackChannel(results, slack_channel)
             else:
                 postResultsToSlackChannelWithLink(
@@ -337,20 +344,6 @@ class Scraper(object):
             return False, 'Caught ' \
                 + str("".join(traceback.format_exception(exc_type, exc_value, exec_tb)))
 
-    def report_errors_to_slack(self, error_message):
-        """
-        Report / post the input error message to the debug slack channel.
-        """
-
-        try:
-            if self.debug_slack:
-                post_message(DEBUG_SLACK_CHANNEL, error_message)
-            return True, None
-
-        except Exception:
-            exc_type, exc_value, exec_tb = sys.exc_info()
-            return False, 'Caught ' \
-                + str("".join(traceback.format_exception(exc_type, exc_value, exec_tb)))
 
     def post_crawl(self):
         """
@@ -379,6 +372,28 @@ class Scraper(object):
             # return False, error_message
 
         return True, results
+
+
+    def report_errors_to_slack(self, error_message):
+        """
+        Report / post the input error message to the debug slack channel.
+        """
+        handle_slack_message(DEBUG_SLACK_CHANNEL, error_message)
+
+
+    def handle_slack_message(self, slack_channel, message):
+        """
+        Post a message to slack. Use the slack_tools module unless
+        the multiprocessing queue has been set via the constructor. 
+        """
+        if self.multiprocessing_queue is not None:
+
+            messageToPost = SlackPost(slack_channel, message)
+            self.multiprocessing_queue.put(messageToPost)
+
+        else:
+            post_message(slack_channel, message)
+
 
     def run(self):
         """ Blocking run.

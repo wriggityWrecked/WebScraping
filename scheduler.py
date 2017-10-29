@@ -2,14 +2,15 @@ import threading
 import time
 import datetime
 import signal
-import subprocess
-import scrape_knl
+from multiprocessing import Queue, Process
+import run_scraper
 
 from enum import Enum
 from schedule import *
-from utils.slack_tools import post_message
+from utils.slack_tools import post_message, SlackPost
 
-RUN_METHOD_DICT = { "knl" : scra}
+DEBUG_SLACK_CHANNEL = 'robot_comms' #todo move to slack_tools module
+
 
 class SchedulerStage(Enum):
 
@@ -22,7 +23,9 @@ class SchedulerStage(Enum):
 
 class Scheduler(object):
 
-    def __init__(self, name, schedule_dictionary, module_name):
+    def __init__(self, name, schedule_dictionary, module_name, multiprocessing_queue):
+
+        #todo assertions for not None?
 
         self.schedule_dictionary = schedule_dictionary
         self.time_last_ran = 0
@@ -33,6 +36,7 @@ class Scheduler(object):
         self.name = name
         self.stage = SchedulerStage.CREATED
         self.module_name = module_name
+        self.multiprocessing_queue = multiprocessing_queue
         # todo validate input dictionary
 
     def __str__(self):
@@ -61,8 +65,9 @@ class Scheduler(object):
         with self.event_lock:
             return self.event.isSet()
 
+    #todo need a stop method
 
-    def run(self):
+    def start_scraper_process(self):
 
         #launch a sub process, because the twisted reactor
         #won't accept new jobs after run is called
@@ -70,10 +75,13 @@ class Scheduler(object):
         #todo new thread and monitor if need be
         self.stage = SchedulerStage.EXECUTING
         print self
+
         #using another process because the twisted reactor cannot be restarted
-        _p = Process(target=beer_run, args=())
+        module_target = getattr(run_scraper, self.module_name)
+        _p = Process(target=module_target, args=(), kwargs={'multiprocessing_queue':self.multiprocessing_queue}) #todo pass the multiprocessing queue as an arg
         _p.start()
         _p.join()        
+
         #todo this should be a blocking call, e.g. one shot
         self.number_of_times_run += 1
         #todo time this
@@ -81,6 +89,7 @@ class Scheduler(object):
 
     def run(self):
 
+        #post message needs to be queued
         post_message(DEBUG_SLACK_CHANNEL, "starting schedule for " + self.name)
         self.stage = SchedulerStage.RUNNING
 
@@ -90,7 +99,7 @@ class Scheduler(object):
 
             if self.number_of_times_run == 0:
                 print 'running first scraper'
-                self.run_scraper()
+                self.start_scraper_process()
                 post_message(DEBUG_SLACK_CHANNEL, str(self))
 
 
@@ -132,7 +141,7 @@ class Scheduler(object):
                 return
 
             if _run_scraper:
-                self.run_scraper()
+                self.start_scraper_process()
 
             print self
             post_message(DEBUG_SLACK_CHANNEL, str(self))
@@ -141,8 +150,10 @@ class Scheduler(object):
 
 def schedule_knl():
 
+    q = Queue()
+
     ##todo try catch for KeyBoard
-    sd = {0: {NORMAL_HOURS_KEY: ['9', '20'], PEAK_HOURS_KEY: ['10', '15']},\
+    sd = {0: {NORMAL_HOURS_KEY: ['9', '21'], PEAK_HOURS_KEY: ['10', '15']},\
             1: {NORMAL_HOURS_KEY: ['9', '20'], PEAK_HOURS_KEY: ['10', '15']},\
             2: {NORMAL_HOURS_KEY: ['9', '20'], PEAK_HOURS_KEY: ['10', '15']},\
             3: {NORMAL_HOURS_KEY: ['9', '20'], PEAK_HOURS_KEY: ['10', '15']},\
@@ -150,14 +161,18 @@ def schedule_knl():
             5: {NORMAL_HOURS_KEY: ['8', '20']},\
             6: {NORMAL_HOURS_KEY: ['9', '20']}}
 
-    test = Scheduler('knl', sd, 'scrape_knl') #todo needs input queue
-    t = threading.Thread( target=test.run, args=() )
+    test = Scheduler('knl', sd, 'knl_spirits', q) #todo needs input queue
+    t = threading.Thread( target=test.run, args=())
 
     #todo a scheduler should handle this thread
     try:
         t.start()
         while t.isAlive(): 
-            t.join(120) #todo longer wait?
+
+            p = q.get() #slackPost
+            post_message(p.channel, p.message)
+
+            t.join(1) #todo longer wait?
             print time.time()
             #todo log we are waiting and active..?
     except (KeyboardInterrupt, SystemExit):
@@ -220,8 +235,11 @@ def schedule_bh():
 
     try:
         t.start()
-        while t.isAlive(): 
-            t.join(120) #todo longer wait?
+        while t.isAlive():
+
+
+
+            t.join(1) #todo longer wait?
             print time.time()
             #todo log we are waiting and active..?
     except (KeyboardInterrupt, SystemExit):
@@ -237,7 +255,7 @@ def schedule_bh():
         #-script-without-killing-it
 
 def startProcesses():
-
+    print 'hi'
     #todo
 
     #construct a shared multiprocessing queue
@@ -251,14 +269,16 @@ def startProcesses():
 
 if __name__ == "__main__":
 
-    if len( sys.argv ) > 1:
-        script_name = sys.argv[1]
+    schedule_knl()
 
-        if 'etre' in script_name:
-            schedule_etre()
-        elif 'knl' in script_name:
-            schedule_knl()
-        elif 'bh' in script_name:
-            schedule_bh()
-        else:
-            print 'invalid input'
+    # if len( sys.argv ) > 1:
+    #     script_name = sys.argv[1]
+
+    #     if 'etre' in script_name:
+    #         schedule_etre()
+    #     elif 'knl' in script_name:
+    #         schedule_knl()
+    #     elif 'bh' in script_name:
+    #         schedule_bh()
+    #     else:
+    #         print 'invalid input'
