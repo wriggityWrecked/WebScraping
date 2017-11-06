@@ -17,21 +17,20 @@ from websocket import WebSocketConnectionClosedException
 LOGGER = logging.getLogger(__name__)
 LOGGER.addHandler(logging.StreamHandler(sys.stdout))
 
-TOKEN_FILE_PATH_AND_NAME = os.path.join(
-    os.path.dirname(__file__), 'slackToken')
+TOKEN_FILE_PATH_AND_NAME = os.path.join(os.path.dirname(__file__), 'slackToken')
 
 DEBUG_SLACK_CHANNEL = 'robot_comms'
 
 
 class SlackPost(object):
 
-
     def __init__(self, channel, message):
         self.channel = channel
         self.message = message
 
     def __str__(self):
-    	return 'channel=' + channel + ", message=" + message		
+    	return 'channel=' + self.channel + ", message=" + self.message		
+
 
 #https://docs.python.org/2/library/multiprocessing.html#exchanging-objects-between-processes
 def run_slack_process(slack_token_path, queue):
@@ -79,6 +78,13 @@ def run_slack_process(slack_token_path, queue):
 		LOGGER.error( "Connection Failed, invalid token?" )
 
 
+def post_message_to_queue(multiprocessing_queue, channel, message):
+	"""
+
+	"""
+	post = SlackPost(channel, message)
+	multiprocessing_queue.put(post)
+
 
 def post_message(channel, message):
     """Post to slack given the input channel and message. This is simply a
@@ -108,6 +114,8 @@ def post_message(channel, message):
 #todo input token path
 
 def post_message_with_client(slack_client, channel, message):
+	"""
+	"""
 
 	# check channel
 	if not channel:
@@ -131,6 +139,7 @@ def post_message_with_client(slack_client, channel, message):
 
 
 def main():
+	
     parser = argparse.ArgumentParser(
         description='Post to a slack channel given said channel and slack token')
     parser.add_argument('channel', metavar='Channel Name',

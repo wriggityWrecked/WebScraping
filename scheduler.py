@@ -3,13 +3,12 @@ import time
 import datetime
 import signal
 from multiprocessing import Queue, Process
-import run_scraper
-
 from enum import Enum
-from schedule import *
-from utils.slack_tools import post_message, SlackPost
+from random import uniform
 
-DEBUG_SLACK_CHANNEL = 'robot_comms' #todo move to slack_tools module
+import run_scraper
+from utils.schedule_utils import is_currently_schedulable, get_seconds_until_next_day
+from utils.slack_tools import post_message, post_message_to_queue, SlackPost, DEBUG_SLACK_CHANNEL
 
 
 class SchedulerStage(Enum):
@@ -23,21 +22,26 @@ class SchedulerStage(Enum):
 
 class Scheduler(object):
 
-    def __init__(self, name, schedule_dictionary, module_name, multiprocessing_queue):
+    def __init__(self, name, start_time_hour, end_time_hour, module_name, multiprocessing_queue, min_wait_seconds=60, max_wait_seconds=30*60):
 
-        #todo assertions for not None?
+        #todo assertions for start_time < end_time
+        self.name = name
 
-        self.schedule_dictionary = schedule_dictionary
+        self.start_time_hour = start_time_hour
+        self.end_time_hour = end_time_hour
+        self.module_name = module_name
+        self.multiprocessing_queue = multiprocessing_queue
+        self.min_wait_seconds = min_wait_seconds
+        self.max_wait_seconds = max_wait_seconds
+
         self.time_last_ran = 0
         self.number_of_times_run = 0
         self.number_of_times_waited = 0
-        self.event = threading.Event()
-        self.event_lock = threading.RLock()
-        self.name = name
-        self.stage = SchedulerStage.CREATED
-        self.module_name = module_name
-        self.multiprocessing_queue = multiprocessing_queue
-        # todo validate input dictionary
+
+        self.event = threading.Event() #todo private
+        self.event_lock = threading.RLock() #todo private
+        self.stage = SchedulerStage.CREATED #todo private
+
 
     def __str__(self):
 
@@ -52,7 +56,9 @@ class Scheduler(object):
 
 
     def set_event_lock(self, set_):
-
+        """
+        When set it kills this scheduler, but doesn't interrupt a task in progress
+        """
         with self.event_lock:
             if set_:
                 self.event.set()
@@ -78,7 +84,7 @@ class Scheduler(object):
 
         #using another process because the twisted reactor cannot be restarted
         module_target = getattr(run_scraper, self.module_name)
-        _p = Process(target=module_target, args=(), kwargs={'multiprocessing_queue':self.multiprocessing_queue}) #todo pass the multiprocessing queue as an arg
+        _p = Process(target=module_target, args=(), kwargs={'multiprocessing_queue':self.multiprocessing_queue, 'debug_flag':True}) 
         _p.start()
         _p.join()        
 
@@ -107,24 +113,27 @@ class Scheduler(object):
             print 'run'
             self.time_last_ran = datetime.datetime.now()
 
-            day, _, _ = getCurrentDayHourMinute()
-            delay_seconds = getScheduleDelayForDay(self.schedule_dictionary, day)
-            print 'delay_seconds=' + str(delay_seconds)
-
-            _run_scraper = True if delay_seconds != -1 else False
+            _run_scraper = is_currently_schedulable(self.start_time_hour, self.end_time_hour)
+            delay_seconds = None #init
 
             if _run_scraper:
                 self.stage = SchedulerStage.WAITING
+
+                #get a random time to wait
+                #guassian distro?
+                delay_seconds = uniform(self.min_wait_seconds, self.max_wait_seconds)
+
                 msg = self.name + 'waiting ' + str(datetime.timedelta(\
                     seconds=delay_seconds)) + ' to run scraper'
                 print msg
                 post_message(DEBUG_SLACK_CHANNEL, msg)
+
             else:
-
-                #DON"T SLEEP: https://stackoverflow.com/questions/2398661/schedule-a-repeating-event-in-python-3
-
                 self.stage = SchedulerStage.DELAYING
-                delay_seconds = getSecondsUntilNextDay()
+
+                #todo? https://stackoverflow.com/questions/2398661/schedule-a-repeating-event-in-python-3
+
+                delay_seconds = get_seconds_until_next_day()
                 msg = self.name + 'waiting ' + str(datetime.timedelta(\
                     seconds=delay_seconds)) + ' until next day'
                 print msg
@@ -136,11 +145,12 @@ class Scheduler(object):
             if self._is_event_lock_set():
                 self.stage = SchedulerStage.TERMINATED
                 print self
-                msg = self.name + 'exiting run' + ' ' + str(self)
+                msg = self.name + ' exiting run' + ' ' + str(self)
                 post_message(DEBUG_SLACK_CHANNEL, msg)
                 return
 
             if _run_scraper:
+                print('_run_scraper='+str(_run_scraper))
                 self.start_scraper_process()
 
             print self
@@ -150,18 +160,12 @@ class Scheduler(object):
 
 def schedule_knl():
 
+    #todo start and end time
+
+
     q = Queue()
 
-    ##todo try catch for KeyBoard
-    sd = {0: {NORMAL_HOURS_KEY: ['9', '21'], PEAK_HOURS_KEY: ['10', '15']},\
-            1: {NORMAL_HOURS_KEY: ['9', '20'], PEAK_HOURS_KEY: ['10', '15']},\
-            2: {NORMAL_HOURS_KEY: ['9', '20'], PEAK_HOURS_KEY: ['10', '15']},\
-            3: {NORMAL_HOURS_KEY: ['9', '20'], PEAK_HOURS_KEY: ['10', '15']},\
-            4: {NORMAL_HOURS_KEY: ['9', '20'], PEAK_HOURS_KEY: ['10', '15']},\
-            5: {NORMAL_HOURS_KEY: ['8', '20']},\
-            6: {NORMAL_HOURS_KEY: ['9', '20']}}
-
-    test = Scheduler('knl', sd, 'knl_spirits', q) #todo needs input queue
+    test = Scheduler('knl', 8, 20, 'knl_beer', q, min_wait_seconds=2*60, max_wait_seconds=12*60)
     t = threading.Thread( target=test.run, args=())
 
     #todo a scheduler should handle this thread
@@ -170,6 +174,7 @@ def schedule_knl():
         while t.isAlive(): 
 
             p = q.get() #slackPost
+            print("draining queue "+ str(p))
             post_message(p.channel, p.message)
 
             t.join(1) #todo longer wait?
@@ -187,72 +192,32 @@ def schedule_knl():
         #http://stackoverflow.com/questions/29100568/how-can-i-stop-python
         #-script-without-killing-it
 
-def schedule_etre():
+# def schedule_etre():
 
-    ##todo try catch for KeyBoard
-    sd = {0: {NORMAL_HOURS_KEY: ['0', '10'], PEAK_HOURS_KEY: ['2', '6']},\
-            1: {NORMAL_HOURS_KEY: ['0', '10'], PEAK_HOURS_KEY: ['2', '6']},\
-            2: {NORMAL_HOURS_KEY: ['0', '10'], PEAK_HOURS_KEY: ['2', '6']},\
-            3: {NORMAL_HOURS_KEY: ['0', '10'], PEAK_HOURS_KEY: ['2', '6']},\
-            4: {NORMAL_HOURS_KEY: ['0', '10'], PEAK_HOURS_KEY: ['2', '6']},\
-            5: {NORMAL_HOURS_KEY: ['0', '10']},\
-            6: {NORMAL_HOURS_KEY: ['0', '10']}}
-
-    test = Scheduler('etre', sd, 'scrape_etre.py')
-    t = threading.Thread( target=test.run, args=() )
-
-    try:
-        t.start()
-        while t.isAlive(): 
-            t.join(120) #todo longer wait?
-            print time.time()
-            #todo log we are waiting and active..?
-    except (KeyboardInterrupt, SystemExit):
-        print 'interrupted!!'
-        test.set_event_lock(True)
-        print test._is_event_lock_set()
-        print test
-        #todo better waiting mechanism for run to fall through
-        #test.join()
-        print test
-        print 'interrupted and done'
-        #http://stackoverflow.com/questions/29100568/how-can-i-stop-python
-        #-script-without-killing-it
-
-def schedule_bh():
-
-    ##todo try catch for KeyBoard
-    sd = {0: {NORMAL_HOURS_KEY: ['0', '10'], PEAK_HOURS_KEY: ['2', '6']},\
-            1: {NORMAL_HOURS_KEY: ['0', '10'], PEAK_HOURS_KEY: ['2', '6']},\
-            2: {NORMAL_HOURS_KEY: ['0', '10'], PEAK_HOURS_KEY: ['2', '6']},\
-            3: {NORMAL_HOURS_KEY: ['0', '10'], PEAK_HOURS_KEY: ['2', '6']},\
-            4: {NORMAL_HOURS_KEY: ['0', '10'], PEAK_HOURS_KEY: ['2', '6']},\
-            5: {NORMAL_HOURS_KEY: ['0', '10']},\
-            6: {NORMAL_HOURS_KEY: ['0', '10']}}
-
-    test = Scheduler('belgian_happiness', sd, 'scrape_belgian_happiness.py')
-    t = threading.Thread( target=test.run, args=() )
-
-    try:
-        t.start()
-        while t.isAlive():
+#     #todo start and end time
 
 
+#     ##todo try catch for KeyBoard
+#     sd = {0: {NORMAL_HOURS_KEY: ['0', '10'], PEAK_HOURS_KEY: ['2', '6']},\
+#             1: {NORMAL_HOURS_KEY: ['0', '10'], PEAK_HOURS_KEY: ['2', '6']},\
+#             2: {NORMAL_HOURS_KEY: ['0', '10'], PEAK_HOURS_KEY: ['2', '6']},\
+#             3: {NORMAL_HOURS_KEY: ['0', '10'], PEAK_HOURS_KEY: ['2', '6']},\
+#             4: {NORMAL_HOURS_KEY: ['0', '10'], PEAK_HOURS_KEY: ['2', '6']},\
+#             5: {NORMAL_HOURS_KEY: ['0', '10']},\
+#             6: {NORMAL_HOURS_KEY: ['0', '10']}}
 
-            t.join(1) #todo longer wait?
-            print time.time()
-            #todo log we are waiting and active..?
-    except (KeyboardInterrupt, SystemExit):
-        print 'interrupted!!'
-        test.set_event_lock(True)
-        print test._is_event_lock_set()
-        print test
-        #todo better waiting mechanism for run to fall through
-        #test.join()
-        print test
-        print 'interrupted and done'
-        #http://stackoverflow.com/questions/29100568/how-can-i-stop-python
-        #-script-without-killing-it
+# def schedule_bh():
+
+#     #todo start and end time
+
+#     ##todo try catch for KeyBoard
+#     sd = {0: {NORMAL_HOURS_KEY: ['0', '10'], PEAK_HOURS_KEY: ['2', '6']},\
+#             1: {NORMAL_HOURS_KEY: ['0', '10'], PEAK_HOURS_KEY: ['2', '6']},\
+#             2: {NORMAL_HOURS_KEY: ['0', '10'], PEAK_HOURS_KEY: ['2', '6']},\
+#             3: {NORMAL_HOURS_KEY: ['0', '10'], PEAK_HOURS_KEY: ['2', '6']},\
+#             4: {NORMAL_HOURS_KEY: ['0', '10'], PEAK_HOURS_KEY: ['2', '6']},\
+#             5: {NORMAL_HOURS_KEY: ['0', '10']},\
+#             6: {NORMAL_HOURS_KEY: ['0', '10']}}
 
 def startProcesses():
     print 'hi'

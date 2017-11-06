@@ -19,7 +19,6 @@ from random import randint
 from spiders.knl_beer_spider import KnLBeerSpider
 from spiders.knl_spirits_spider import KnLSpiritsSpider
 from spiders.etreSpider import EtreSpider
-from spiders.etreSpider import EtreSpider
 from spiders.belgianHappinessSpider import BelgianHappinessSpider
 from spiders.biabSpider import BelgiumInABox
 
@@ -31,9 +30,8 @@ def knl_beer(debug_flag=False, multiprocessing_queue=None):
 
     #todo should be renamed
     knl_beer_scraper = Scraper('knl', KnLBeerSpider,
-                               'knlscraper', 'http://www.klwines.com/p/i?i=', multiprocessing_queue=multiprocessing_queue)
-    knl_beer_scraper.set_debug_log(debug_flag)
-    knl_beer_scraper.set_debug_slack(debug_flag)
+                               'knlscraper', product_link='http://www.klwines.com/p/i?i=',
+                                multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag)
 
     print knl_beer_scraper.run()
 
@@ -42,10 +40,8 @@ def knl_spirits(debug_flag=False, multiprocessing_queue=None):
     """Run the scraper as a standalone script. This method blocks until finished"""
 
     knl_spirits_scraper = Scraper('knlSpirits', KnLSpiritsSpider,
-                                   'knlspiritsscraper','http://www.klwines.com/p/i?i=',
-                                    multiprocessing_queue=multiprocessing_queue)
-    knl_spirits_scraper.set_debug_log(debug_flag)
-    knl_spirits_scraper.set_debug_slack(debug_flag)
+                                   'knlspiritsscraper', product_link='http://www.klwines.com/p/i?i=',
+                                    multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag)
 
     print knl_spirits_scraper.run()
 
@@ -54,10 +50,8 @@ def etre(debug_flag=False, multiprocessing_queue=None):
     """Run the scraper as a standalone script. This method blocks until finished"""
     
     etre_scraper = Scraper('etre', EtreSpider,
-                    'etrescraper', 'http://www.bieresgourmet.be/catalog/index.php?main_page\
-                    =product_info&products_id=', multiprocessing_queue=multiprocessing_queue)
-    etre_scraper.set_debug_log(debug_flag)
-    etre_scraper.set_debug_slack(debug_flag)
+                    'etrescraper', product_link='http://www.bieresgourmet.be/catalog/index.php?main_page\
+                    =product_info&products_id=', multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag)
 
     print etre_scraper.run()
 
@@ -65,9 +59,7 @@ def etre(debug_flag=False, multiprocessing_queue=None):
 def biab(debug_flag=False, multiprocessing_queue=None):
     """Run the scraper as a standalone script. This method blocks until finished"""
 
-    biab_scraper = Scraper('biab', BelgiumInABox, 'biabscraper', multiprocessing_queue=multiprocessing_queue)
-    biab_scraper.set_debug_log(debug_flag)
-    biab_scraper.set_debug_slack(debug_flag)
+    biab_scraper = Scraper('biab', BelgiumInABox, 'biabscraper', multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag)
 
     print biab_scraper.run()
 
@@ -76,30 +68,27 @@ def belgium_happiness(debug_flag=False, multiprocessing_queue=None):
     """Run the scraper as a standalone script. This method blocks until finished"""
 
     bh_scraper = Scraper('belgianHappiness', BelgianHappinessSpider, 'belgianhappiness', 
-        multiprocessing_queue=multiprocessing_queue)
-    bh_scraper.set_debug_log(debug_flag)
-    bh_scraper.set_debug_slack(debug_flag)
+        multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag)
 
     print bh_scraper.run()
 
 
 def run(methods_to_run, debug_flag=False, multiprocessing_queue=None):
     """Run input method(s) as a process. This method blocks until finished.
-    Must be done in separate processes due to twisted reactor behavior.
 
-    A smarter way to do this would be to schedule all spiders to scrape at 
-    once. 
+    Must be done in separate processes due to twisted reactor behavior.
     """
 
     for method in methods_to_run:
         print('\nStarting ' + str(method))
-        _p = Process(target=method, args=(debug_flag,))
+        _p = Process(target=method, args=(), kwargs={'debug_flag': debug_flag,
+         'multiprocessing_queue':multiprocessing_queue})
         _p.start()
         _p.join()
         print('\nFinished ' + str(method) + '\n')
 
 
-def run_continuous(methods_to_run, debug_flag=False):
+def run_continuous(methods_to_run, debug_flag=False, lower_bound_seconds=2*60, upper_bound_seconds=8*60):
     """
     Hackish method to run manually via command line with a random sleep interval. 
     """
@@ -109,23 +98,26 @@ def run_continuous(methods_to_run, debug_flag=False):
 
             run(methods_to_run, debug_flag)
 
-            random_wait_minutes = randint(4*60, 10*60) #todo configurable range?
-            minutes = int(random_wait_minutes / 60.)
-            seconds = int((random_wait_minutes / 60. - minutes) * 60)
+            random_wait_time_seconds = randint(lower_bound_seconds, upper_bound_seconds)
+            minutes, seconds = divmod(random_wait_time_seconds, 60)
+            hours, minutes = divmod(minutes, 60)
+
             now = datetime.now()
-            then = now + timedelta(minutes=minutes,seconds=seconds)
+            then = now + timedelta(hours=hours, minutes=minutes, seconds=seconds)
 
             print('\n' + str(now) + ' sleeping ' + str(minutes) + 'm' +
                 str(seconds) + 's, will run at ' + str(then))
 
-            time.sleep(random_wait_minutes) #todo threading.Timer?
-
+            time.sleep(random_wait_time_seconds) #todo threading.Timer?
+            #https://stackoverflow.com/questions/8600161/executing-periodic-actions-in-python
+            
     except KeyboardInterrupt:
         print '\nKeyboardInterrupt caught, exiting\n'
 
 
 if __name__ == "__main__":
 
+    #scraper_names input arguments to function
     methods = {knl_beer.__name__: knl_beer, knl_spirits.__name__: knl_spirits,
         etre.__name__: etre, biab.__name__: biab, belgium_happiness.__name__: belgium_happiness}
 
@@ -144,7 +136,7 @@ if __name__ == "__main__":
 
     scraper_names = parser.parse_args().scraper_names
     continuous = parser.parse_args().continuous
-    debug_flag = parser.parse_args().continuous
+    debug_flag = parser.parse_args().debug
 
     #get methods from string inputs
     method_list = []
@@ -153,7 +145,7 @@ if __name__ == "__main__":
 
     if continuous is True:
         print 'Running ' + str(method_list) + " continuously"
-        run_continuous(method_list, debug_flag)
+        run_continuous(method_list, debug_flag=debug_flag)
     else:
         print 'Running ' + str(method_list) + " once"
-        run(method_list, debug_flag)
+        run(method_list, debug_flag=debug_flag)

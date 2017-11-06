@@ -23,9 +23,7 @@ from scrapy.crawler import CrawlerRunner
 from utils import get_random_user_agent
 from utils.compare_tools import compare_inventory_files, dprint
 from utils.slackTools import postResultsToSlackChannel, postResultsToSlackChannelWithLink
-from utils.slack_tools import post_message
-
-DEBUG_SLACK_CHANNEL = 'robot_comms' #todo move to slack_tools module
+from utils.slack_tools import post_message, post_message_to_queue, DEBUG_SLACK_CHANNEL
 
 
 class ScraperStage(Enum):
@@ -48,7 +46,7 @@ class Scraper(object):
 
     'Base class for all scrapers'
 
-    def __init__(self, name, spider, slack_channel, product_link=None, multiprocessing_queue=None):
+    def __init__(self, name, spider, slack_channel, product_link=None, multiprocessing_queue=None, debug_flag=False):
 
         self.__stage_lock = threading.Lock()
         self.stage = ScraperStage.CREATED #todo private access so public getter with lock?
@@ -76,16 +74,8 @@ class Scraper(object):
 
         self.start_time = 0
 
-        self.debug_log = False
-        self.debug_slack = False
-
-
-    def set_debug_log(self, debug_log):
-        self.debug_log = debug_log
-
-
-    def set_debug_slack(self, debug_slack):
-        self.debug_slack = debug_slack
+        self.debug_log = debug_flag
+        self.debug_slack = debug_flag
 
 
     def initialize(self):
@@ -205,7 +195,7 @@ class Scraper(object):
 
             # post debug message to slack
             if self.debug_slack:
-                post_message(DEBUG_SLACK_CHANNEL, 'Starting scraper ' + self.name)
+                self.handle_slack_message(DEBUG_SLACK_CHANNEL, 'Starting scraper ' + self.name)
 
             #configure_logging( {'LOG_FORMAT': '%(levelname)s: %(message)s'} )
             runner = CrawlerRunner({
@@ -333,7 +323,7 @@ class Scraper(object):
                 ', Removed: ' + str(results['removedLength'])
             # post to debug slack
             if self.debug_slack:
-                post_message(DEBUG_SLACK_CHANNEL, 'Finished crawler ' + self.name
+                self.handle_slack_message(DEBUG_SLACK_CHANNEL, 'Finished crawler ' + self.name
                          + ', ' + added_removed + ', time taken = '
                          + str(timedelta(seconds=(time.time() - self.start_time))))
 
@@ -386,12 +376,17 @@ class Scraper(object):
         Post a message to slack. Use the slack_tools module unless
         the multiprocessing queue has been set via the constructor. 
         """
+
+        self.logger.info('handle_slack_message ' + str(slack_channel) + " " + str(message))
+
         if self.multiprocessing_queue is not None:
 
-            messageToPost = SlackPost(slack_channel, message)
-            self.multiprocessing_queue.put(messageToPost)
+            self.logger.info('handle_slack_message posting to queue')
+            post_message_to_queue(self.multiprocessing_queue, slack_channel, message)
 
         else:
+
+            self.logger.info('handle_slack_message post_message')
             post_message(slack_channel, message)
 
 
