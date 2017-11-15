@@ -14,6 +14,7 @@ import sys
 import os
 import threading
 import datetime
+import signal
 
 from datetime import timedelta
 from enum import Enum
@@ -22,9 +23,11 @@ from scrapy.crawler import CrawlerRunner
 
 from utils import get_random_user_agent
 from utils.compare_tools import compare_inventory_files, dprint
-from utils.slackTools import postResultsToSlackChannel, postResultsToSlackChannelWithLink
+from utils.slackTools import postResultsToSlackChannel, postResultsToSlackChannelWithLink #todo remove/refactor
 from utils.slack_tools import post_message, post_message_to_queue, DEBUG_SLACK_CHANNEL
 
+
+#https://stackoverflow.com/questions/4125772/twisted-interrupt-callback-via-keyboardinterrupt
 
 class ScraperStage(Enum):
     """
@@ -76,7 +79,7 @@ class Scraper(object):
 
         self.debug_log = debug_flag
         self.debug_slack = debug_flag
-
+        self.terminated = False #used for the SIGINT callback
 
     def initialize(self):
         """
@@ -156,6 +159,15 @@ class Scraper(object):
 
         return string
 
+    def sigint(self, signum, frame):
+        """
+        Method used as a callback for the SIGINT signal handler. 
+        """
+        logging.error("caught sigint")
+        #stop the reactor
+        reactor.stop()
+        #set the terminated flag
+        self.terminated = True
 
     def check_and_setup_directories(self):
 
@@ -214,7 +226,7 @@ class Scraper(object):
             _d.addBoth(lambda _: reactor.stop()) 
             #http://twistedmatrix.com/documents/9.0.0/core/howto/deferredindepth.html#auto7
             #https://twistedmatrix.com/documents/17.9.0/api/twisted.internet.defer.Deferred.html
-            
+            signal.signal(signal.SIGINT, self.sigint)
             reactor.run()
             # this will block until stop is called / when the crawler is done
 
@@ -368,7 +380,7 @@ class Scraper(object):
         """
         Report / post the input error message to the debug slack channel.
         """
-        handle_slack_message(DEBUG_SLACK_CHANNEL, error_message)
+        self.handle_slack_message(DEBUG_SLACK_CHANNEL, error_message)
 
 
     def handle_slack_message(self, slack_channel, message):
@@ -406,13 +418,15 @@ class Scraper(object):
 
         success, message = self.run_spider()
 
-        if not success:
-            error_message = 'run_spider failed\n' + message
+        if not success or self.terminated:
+
+            error_message = 'run_spider failed:' + ( " " + str(message) if message else "") \
+                + (" Manually terminated" if self.terminated else "")
             self.logger.error(error_message)
             self.report_errors_to_slack(error_message)
             self.set_stage(ScraperStage.TERMINATED_ERROR)
             return False, error_message
-
+        
         success, message = self.post_crawl()
 
         self.set_stage(ScraperStage.FINISHED)

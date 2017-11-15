@@ -13,8 +13,8 @@ import argparse
 import time
 
 from datetime import datetime, timedelta
-from multiprocessing import Process
-from random import randint
+from multiprocessing import Process, Pool
+from random import randint, normalvariate
 
 from spiders.knl_beer_spider import KnLBeerSpider
 from spiders.knl_spirits_spider import KnLSpiritsSpider
@@ -72,20 +72,50 @@ def belgium_happiness(debug_flag=False, multiprocessing_queue=None):
 
     print bh_scraper.run()
 
-
+#rename run serial
 def run(methods_to_run, debug_flag=False, multiprocessing_queue=None):
     """Run input method(s) as a process. This method blocks until finished.
 
     Must be done in separate processes due to twisted reactor behavior.
     """
 
+    #this is stupid, you're running processes so dont' serialize!
+    #https://docs.python.org/2/library/multiprocessing.html#module-multiprocessing.pool
     for method in methods_to_run:
         print('\nStarting ' + str(method))
         _p = Process(target=method, args=(), kwargs={'debug_flag': debug_flag,
          'multiprocessing_queue':multiprocessing_queue})
         _p.start()
         _p.join()
+
+        #todo time each run
+
         print('\nFinished ' + str(method) + '\n')
+
+#fun exercise, needs to be used in the scheduler
+def run_parallel(methods_to_run, debug_flag=False, multiprocessing_queue=None):
+    """Run input method(s) as a process. This method blocks until finished.
+
+    Must be done in separate processes due to twisted reactor behavior.
+    """
+
+    #this is stupid, you're running processes so don't serialize!
+    #https://docs.python.org/2/library/multiprocessing.html#module-multiprocessing.pool
+
+    #todo submit an extra function for the queue to process results 
+
+    pool = Pool(len(methods_to_run)) #-> this should use a QUEUE since everything is async!
+
+    for method in methods_to_run:
+        print('\nStarting ' + str(method))
+        
+        pool.apply_async(method, args=(), kwds={'debug_flag': debug_flag,
+         'multiprocessing_queue':multiprocessing_queue})
+
+    pool.close()
+    pool.join()
+
+    print('\nFinished\n')
 
 
 def run_continuous(methods_to_run, debug_flag=False, lower_bound_seconds=2*60, upper_bound_seconds=8*60):
@@ -93,12 +123,18 @@ def run_continuous(methods_to_run, debug_flag=False, lower_bound_seconds=2*60, u
     Hackish method to run manually via command line with a random sleep interval. 
     """
 
+    #todo use lamba to generate random number https://docs.python.org/2/tutorial/controlflow.html#lambda-expressions
+    #or just function call based on user input, but passing in a lambda would be nice
     try:
+
         while True:
 
+            #todo time this
             run(methods_to_run, debug_flag)
 
             random_wait_time_seconds = randint(lower_bound_seconds, upper_bound_seconds)
+            #     random_wait_time_seconds = normalvariate(25*60, 5*60)
+
             minutes, seconds = divmod(random_wait_time_seconds, 60)
             hours, minutes = divmod(minutes, 60)
 
@@ -109,8 +145,9 @@ def run_continuous(methods_to_run, debug_flag=False, lower_bound_seconds=2*60, u
                 str(seconds) + 's, will run at ' + str(then))
 
             time.sleep(random_wait_time_seconds) #todo threading.Timer?
+
             #https://stackoverflow.com/questions/8600161/executing-periodic-actions-in-python
-            
+
     except KeyboardInterrupt:
         print '\nKeyboardInterrupt caught, exiting\n'
 
