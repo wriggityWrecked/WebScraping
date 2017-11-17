@@ -21,8 +21,20 @@ from spiders.knl_spirits_spider import KnLSpiritsSpider
 from spiders.etreSpider import EtreSpider
 from spiders.belgianHappinessSpider import BelgianHappinessSpider
 from spiders.biabSpider import BelgiumInABox
+from spiders.total_wine_spider import TotalWineSpider
 
 from scraper import Scraper
+
+
+def total_wine(debug_flag=False, multiprocessing_queue=None):
+    """Run the scraper as a standalone script. This method blocks until finished"""
+
+    #todo should be renamed
+    total_wine_scraper = Scraper('total_wine', TotalWineSpider,
+                               'totalwinescraper', product_link='http://www.totalwine.com/p/',
+                                multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag)
+
+    print total_wine_scraper.run()
 
 
 def knl_beer(debug_flag=False, multiprocessing_queue=None):
@@ -155,8 +167,11 @@ def run_continuous(methods_to_run, debug_flag=False, lower_bound_seconds=2*60, u
 if __name__ == "__main__":
 
     #scraper_names input arguments to function
+    #todo dynamic
+    #https://stackoverflow.com/questions/5910703/howto-get-all-methods-of-a-python-class-with-given-decorator
     methods = {knl_beer.__name__: knl_beer, knl_spirits.__name__: knl_spirits,
-        etre.__name__: etre, biab.__name__: biab, belgium_happiness.__name__: belgium_happiness}
+        etre.__name__: etre, biab.__name__: biab, belgium_happiness.__name__: belgium_happiness,
+        total_wine.__name__: total_wine}
 
     parser = argparse.ArgumentParser(
         description='Invoke implemented scrapers by name with run options.')

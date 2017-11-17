@@ -16,7 +16,7 @@ class KnLBeerSpider(scrapy.Spider):
     """
 
     name = "knlBeerSpider"
-    download_delay = randint(8, 15)
+    download_delay = randint(2, 12)
     custom_settings = {
         'COOKIES_ENABLED': 'false',
         'DOWNLOAD_DELAY': str(download_delay)
