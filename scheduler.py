@@ -71,7 +71,7 @@ class Scheduler(object):
         with self.event_lock:
             return self.event.isSet()
 
-    #todo need a stop method
+    #todo need a stop method, sigint?
 
     def start_scraper_process(self):
 

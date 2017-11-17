@@ -1,6 +1,6 @@
 """
-Wrapper class for a spider. This class performs all the useful work after a
-spider has finished crawling, i.e., before a spider runs the log and data file
+Wrapper class for a Scrapy spider. This class performs all the useful work after a
+Scrapy spider has finished crawling, i.e., before a spider runs the log and data file
 names are generated, the spider is called via blocking run with the twisted
 reactor, the JSON data is compared for inventory changes (each spider is an
 inventory watcher), and post all relevant messages to Slack. 
@@ -27,8 +27,6 @@ from utils.slackTools import postResultsToSlackChannel, postResultsToSlackChanne
 from utils.slack_tools import post_message, post_message_to_queue, DEBUG_SLACK_CHANNEL
 
 
-#https://stackoverflow.com/questions/4125772/twisted-interrupt-callback-via-keyboardinterrupt
-
 class ScraperStage(Enum):
     """
     Enum denoting the current scraper stage.
@@ -42,7 +40,7 @@ class ScraperStage(Enum):
     PROCESSING_RESULTS = 7
     POSTING_RESULTS = 8
     FINISHED = 9
-    TERMINATED_ERROR = 10
+    TERMINATED = 10
 
 
 class Scraper(object):
@@ -79,7 +77,6 @@ class Scraper(object):
 
         self.debug_log = debug_flag
         self.debug_slack = debug_flag
-        self.terminated = False #used for the SIGINT callback
 
     def initialize(self):
         """
@@ -159,15 +156,13 @@ class Scraper(object):
 
         return string
 
-    def sigint(self, signum, frame):
+    def terminate(self, signum, frame):
         """
         Method used as a callback for the SIGINT signal handler. 
         """
-        logging.error("caught sigint")
+        self.set_stage(ScraperStage.TERMINATED)
         #stop the reactor
         reactor.stop()
-        #set the terminated flag
-        self.terminated = True
 
     def check_and_setup_directories(self):
 
@@ -226,7 +221,8 @@ class Scraper(object):
             _d.addBoth(lambda _: reactor.stop()) 
             #http://twistedmatrix.com/documents/9.0.0/core/howto/deferredindepth.html#auto7
             #https://twistedmatrix.com/documents/17.9.0/api/twisted.internet.defer.Deferred.html
-            signal.signal(signal.SIGINT, self.sigint)
+            signal.signal(signal.SIGINT, self.terminate)
+            signal.signal(signal.SIGTERM, self.terminate)
             reactor.run()
             # this will block until stop is called / when the crawler is done
 
@@ -362,7 +358,7 @@ class Scraper(object):
             error_message = 'process_spider_results failed\n' + results
             self.logger.error(error_message)
             self.report_errors_to_slack(error_message)
-            self.set_stage(ScraperStage.TERMINATED_ERROR)
+            self.set_stage(ScraperStage.TERMINATED)
             return False, error_message
 
         # post the results to slack
@@ -370,8 +366,6 @@ class Scraper(object):
 
         if not success:
             self.logger.error('post_to_slack failed\n' + message)
-            #self.set_stage( ScraperStage.TERMINATED_ERROR )
-            # return False, error_message
 
         return True, results
 
@@ -418,10 +412,10 @@ class Scraper(object):
 
         success, message = self.run_spider()
 
-        if not success or self.terminated:
+        if not success or self.stage == ScraperStage.TERMINATED:
 
             error_message = 'run_spider failed:' + ( " " + str(message) if message else "") \
-                + (" Manually terminated" if self.terminated else "")
+                + (" Manually terminated" if self.stage == ScraperStage.TERMINATED else "")
             self.logger.error(error_message)
             self.report_errors_to_slack(error_message)
             self.set_stage(ScraperStage.TERMINATED_ERROR)
