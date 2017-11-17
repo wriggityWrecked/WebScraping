@@ -418,7 +418,7 @@ class Scraper(object):
                 + (" Manually terminated" if self.stage == ScraperStage.TERMINATED else "")
             self.logger.error(error_message)
             self.report_errors_to_slack(error_message)
-            self.set_stage(ScraperStage.TERMINATED_ERROR)
+            self.set_stage(ScraperStage.TERMINATED)
             return False, error_message
         
         success, message = self.post_crawl()
