@@ -11,7 +11,7 @@ class BelgianHappinessSpider(scrapy.Spider):
 	
 	logger        = logging.getLogger(__name__)
 	name          = "belgianHappinessSpider"
-	downloadDelay = randint( 8, 15 )
+	downloadDelay = randint(2,4)
 
 	custom_settings = {
 	    'COOKIES_ENABLED': 'false',

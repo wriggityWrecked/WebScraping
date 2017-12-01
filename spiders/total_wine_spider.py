@@ -16,7 +16,7 @@ class TotalWineSpider(scrapy.Spider):
     """
 
     name = "totalWineSpider"
-    download_delay = randint(2, 12)
+    download_delay = randint(2, 6)
     custom_settings = {
         'COOKIES_ENABLED': 'false',
         'DOWNLOAD_DELAY': str(download_delay)
@@ -30,7 +30,7 @@ class TotalWineSpider(scrapy.Spider):
     def start_requests(self):
 
         urls = [
-            'http://www.totalwine.com/beer/c/c0010?storename=1117,1115&viewall=true&page=1&pagesize=200&tab=aty_isp&sort=name-asc' # url for all beer
+            'http://www.totalwine.com/beer/c/c0010?storename=1117,1115,1120&viewall=true&page=1&pagesize=200&tab=aty_isp&sort=name-asc' # url for all beer
         ]
 
         logging.getLogger(__name__)
