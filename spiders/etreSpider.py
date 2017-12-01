@@ -14,7 +14,7 @@ class EtreSpider(scrapy.Spider):
 	logger.setLevel( logging.INFO )
 
 	name          = "etreBeerSpider"
-	downloadDelay = randint( 8, 15 )
+	downloadDelay = randint(2,4)
 
 	custom_settings = {
 	    'COOKIES_ENABLED': 'false',

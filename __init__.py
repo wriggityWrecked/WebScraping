@@ -1,28 +1,28 @@
 webscraping/
     __init__.py
     scheduler.py
-    scrapeBelgianHappiness.py
-    scrapeBiab.py
-    scrapeEtre.py
-    scrape_knl.py
     scraper.py
-    scraperSchedule.py
-    slackReceiver.py
     spiders/
         __init__.py
         belgianHappinessSpider.py
         biabSpider.py
         cantillionSpider.py
         etreSpider.py
-        knl_spiders.py
+        knl_beer_spider.py
+        knl_coming_soon.py
+        knl_spirits_spider.py
+        total_wine_spider.py
     tests/
         __init__.py
         test_schedule.py
         test_compare_tools.py
+        test_message_formatter.py
     utils/
         __init__.py
         compare_tools.py
-        getRandomUserAgent.py
+        message_formatter.py
+        get_random_user_agent.py
+        schedule.py
         slackTools.py
         slack_tools.py
         schedule_utils.py

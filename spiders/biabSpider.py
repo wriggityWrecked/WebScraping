@@ -10,10 +10,10 @@ dateEntry = False
 class BelgiumInABox(scrapy.Spider):
 
     name = "belgiumInABox"
-    
+    downloadDelay = randint(2,4)
     custom_settings = {
         'COOKIES_ENABLED': 'false',
-        'DOWNLOAD_DELAY' : '8'
+        'DOWNLOAD_DELAY': str( downloadDelay )
     }
 
     def start_requests(self):

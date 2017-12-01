@@ -13,19 +13,17 @@ import traceback
 import sys
 import os
 import threading
-import datetime
 import signal
 
-from datetime import timedelta
+from datetime import timedelta, datetime
 from enum import Enum
 from twisted.internet import reactor
 from scrapy.crawler import CrawlerRunner
 
 from utils import get_random_user_agent
 from utils.compare_tools import compare_inventory_files, dprint
-from utils.slackTools import postResultsToSlackChannel, postResultsToSlackChannelWithLink #todo remove/refactor
 from utils.slack_tools import post_message, post_message_to_queue, DEBUG_SLACK_CHANNEL
-
+from utils import message_formatter
 
 class ScraperStage(Enum):
     """
@@ -47,7 +45,10 @@ class Scraper(object):
 
     'Base class for all scrapers'
 
-    def __init__(self, name, spider, slack_channel, product_link=None, multiprocessing_queue=None, debug_flag=False):
+    def __init__(self, name, spider, slack_channel, product_link_formatter=message_formatter.DEFAULT_LINK_FORMATTER,\
+        multiprocessing_queue=None, debug_flag=False, product_link=None):
+
+        #todo argument check name, spider, slack_channel, product_link, etc
 
         self.__stage_lock = threading.Lock()
         self.stage = ScraperStage.CREATED #todo private access so public getter with lock?
@@ -58,12 +59,14 @@ class Scraper(object):
         # spider object
         self.spider = spider
 
-        # link to use to append to an ID, todo need to make a rich object as links are page specific
-        # either specify or leave blank
-        self.product_link = product_link
-
         # slack channel name used to post results
         self.slack_channel = slack_channel
+
+        # link to use to append to an ID, todo need to make a rich object as links are page specific
+        # either specify or leave blank
+        self.product_link_formatter = product_link_formatter
+
+        self.product_link = product_link
 
         #multiprocessing queue to post results, used among the various processes
         #to share a slack connection via slack tools
@@ -86,7 +89,7 @@ class Scraper(object):
 
         self.set_stage(ScraperStage.INITIALIZED)
         self.start_time = 0
-        now = datetime.datetime.now()
+        now = datetime.now()
         now_string = now.strftime("%Y-%m-%dT%H:%M:%S")
 
         # archive directory of scraper results
@@ -136,7 +139,7 @@ class Scraper(object):
         """
 
         with self.__stage_lock:
-            print 'setting stage to ' + str(new_stage)
+            print(str(datetime.now()) + ' setting stage to ' + str(new_stage))
             self.stage = new_stage
 
 
@@ -156,6 +159,7 @@ class Scraper(object):
 
         return string
 
+
     def terminate(self, signum, frame):
         """
         Method used as a callback for the SIGINT signal handler. 
@@ -163,6 +167,7 @@ class Scraper(object):
         self.set_stage(ScraperStage.TERMINATED)
         #stop the reactor
         reactor.stop()
+
 
     def check_and_setup_directories(self):
 
@@ -277,7 +282,7 @@ class Scraper(object):
             dprint(removed, added)
 
             # now we have a new inventory file, rotating to inventory_file_name
-            now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+            now = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
             self.rotated_file_name = self.rotated_file_name + now + '.json'
 
             logging.debug('rotating ' + self.inventory_file_name +
@@ -288,10 +293,8 @@ class Scraper(object):
 
             # compile results
             results = {}
-            results['addedLength'] = len(added)
-            results['addedList'] = added
-            results['removedLength'] = len(removed)
-            results['removedList'] = removed
+            results[message_formatter.ADDED_MAP_KEY] = added
+            results[message_formatter.REMOVED_MAP_KEY] = removed
 
             logging.debug('results = ' + str(results))
 
@@ -309,39 +312,7 @@ class Scraper(object):
             exc_type, exc_value, exec_tb = sys.exc_info()
             return False, 'Caught ' \
                 + str("".join(traceback.format_exception(exc_type, exc_value, exec_tb)))
-
-
-    def post_to_slack(self, results, slack_channel):
-        """
-        Construct a results string, from the input, and post to the input Slack channel.
-        """
-
-        try:
-
-            self.set_stage(ScraperStage.POSTING_RESULTS)
-
-            # post to slack
-            if self.product_link is not None and not self.product_link:
-                postResultsToSlackChannel(results, slack_channel)
-            else:
-                postResultsToSlackChannelWithLink(
-                    results, self.product_link, slack_channel)
-
-            added_removed = 'Added: ' + str(results['addedLength']) + \
-                ', Removed: ' + str(results['removedLength'])
-            # post to debug slack
-            if self.debug_slack:
-                self.handle_slack_message(DEBUG_SLACK_CHANNEL, 'Finished crawler ' + self.name
-                         + ', ' + added_removed + ', time taken = '
-                         + str(timedelta(seconds=(time.time() - self.start_time))))
-
-            return True, None
-
-        except Exception:
-            exc_type, exc_value, exec_tb = sys.exc_info()
-            return False, 'Caught ' \
-                + str("".join(traceback.format_exception(exc_type, exc_value, exec_tb)))
-
+                
 
     def post_crawl(self):
         """
@@ -362,13 +333,34 @@ class Scraper(object):
             return False, error_message
 
         # post the results to slack
-        success, message = self.post_to_slack(results, self.slack_channel)
+        #todo deprecate post_to_slack
+        message = self.handle_results(results)
 
-        if not success:
-            self.logger.error('post_to_slack failed\n' + message)
+        # post to debug slack
+        if self.debug_slack:
+            self.handle_slack_message(DEBUG_SLACK_CHANNEL, 'Finished crawler ' + self.name \
+                    + ', time taken = ' + str(timedelta(seconds=(time.time() - self.start_time))) \
+                    + ((',' + message) if len(message) > 0 else ''))
 
-        return True, results
+        return True, message
 
+    def handle_results(self, compared_results):
+        #get the message
+        
+        #legacy link
+        link_lambda = self.product_link_formatter
+        if self.product_link is not None:
+            link_lambda = lambda _id,_name: _name + " : " + self.product_link + _id
+
+        should_post, message = message_formatter.format_notification_message(compared_results, link_lambda)
+        
+        #post to slack if anything was added
+        if should_post:
+            self.set_stage(ScraperStage.POSTING_RESULTS)
+            self.handle_slack_message(self.slack_channel, message)
+
+        #return the message
+        return message
 
     def report_errors_to_slack(self, error_message):
         """

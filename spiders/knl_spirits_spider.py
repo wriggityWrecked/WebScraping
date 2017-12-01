@@ -7,7 +7,6 @@ Example:
 
 import datetime
 import logging
-from random import randint
 import scrapy
 
 class KnLSpiritsSpider(scrapy.Spider):
@@ -15,7 +14,7 @@ class KnLSpiritsSpider(scrapy.Spider):
     """
 
     name = "knlSpiritsSpider"
-    download_delay = randint(2, 12)
+    download_delay = 1
     custom_settings = {
         'COOKIES_ENABLED': 'false',
         'DOWNLOAD_DELAY': str(download_delay)
