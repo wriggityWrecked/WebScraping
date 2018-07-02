@@ -29,7 +29,8 @@ class KnLComingSoonSpider(scrapy.Spider):
     def start_requests(self):
 
         urls = [
-            'https://www.klwines.com/Products/r?r=47+4294965539&d=1&t=&o=8&z=True' # url for beer coming soon
+            'https://www.klwines.com/Products/r?r=47+4294965539&d=1&t=&o=8&z=True', # url for beer coming soon
+            'http://www.klwines.com/Products/r?r=47+4294967191&d=1&t=&o=8&z=True' # url for spirits coming soon
         ]
 
         logging.getLogger(__name__)

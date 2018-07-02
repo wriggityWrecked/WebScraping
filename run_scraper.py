@@ -136,7 +136,7 @@ def run_parallel(methods_to_run, debug_flag=False, multiprocessing_queue=None):
     print('\n' + str(datetime.now()) + 'Finished\n')
 
 
-def run_continuous(methods_to_run, debug_flag=False, lower_bound_seconds=1*60, upper_bound_seconds=2*60):
+def run_continuous(methods_to_run, debug_flag=False, lower_bound_seconds=30, upper_bound_seconds=60):
     """
     Hackish method to run manually via command line with a random sleep interval. 
     """

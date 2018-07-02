@@ -22,7 +22,7 @@ class SchedulerStage(Enum):
 
 class Scheduler(object):
 
-    def __init__(self, name, start_time_hour, end_time_hour, module_name, multiprocessing_queue, min_wait_seconds=60, max_wait_seconds=30*60):
+    def __init__(self, name, start_time_hour, end_time_hour, module_name, multiprocessing_queue, min_wait_seconds=20, max_wait_seconds=10*60):
 
         #todo assertions for start_time < end_time
         self.name = name
