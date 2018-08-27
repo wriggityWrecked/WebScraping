@@ -41,8 +41,8 @@ def compare_map(old_map, new_map):
 
     # check data hash, if equal no changes
     # frozenset is immutable, so can generate hash
-    if hash(frozenset(old_map)) == hash(frozenset(new_map)):
-        return removed_entries, new_entries
+    if hash_dict(hash_map1) == hash_dict(hash_map2):
+        return removed, new
 
     for entry in new_map.keys():
         # check if in oldMap
