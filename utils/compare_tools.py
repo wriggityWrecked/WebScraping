@@ -30,7 +30,11 @@ def hash_dict(dictionary):
 def compare_map(old_map, new_map):
     """Compare two maps and return two maps, where the first map is contains
     all of the removed entries and the second contains all of the added
-    entries."""
+    entries.
+
+    If no entries then empty maps will be returned or if the input maps' hashes
+    are equal.
+    """
 
     removed_entries = {}
     new_entries = {}
@@ -41,8 +45,8 @@ def compare_map(old_map, new_map):
 
     # check data hash, if equal no changes
     # frozenset is immutable, so can generate hash
-    if hash_dict(hash_map1) == hash_dict(hash_map2):
-        return removed, new
+    if hash_dict(old_map) == hash_dict(new_map):
+        return removed_entries, new_entries
 
     for entry in new_map.keys():
         # check if in oldMap
