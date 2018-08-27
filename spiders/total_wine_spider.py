@@ -22,11 +22,6 @@ class TotalWineSpider(scrapy.Spider):
         'DOWNLOAD_DELAY': str(download_delay)
     }
 
-    def __init__(self, *args, **kwargs):
-
-        self.date_entry = False
-        super(TotalWineSpider, self).__init__(*args, **kwargs)
-
     def start_requests(self):
 
         urls = [
@@ -76,13 +71,6 @@ class TotalWineSpider(scrapy.Spider):
                     id_ = ''.join(id_).strip()
 
                     beer_name = ''.join(beer_name).strip()
-
-                    if not self.date_entry:
-                        self.date_entry = True
-                        yield {
-                            'creationDate': \
-                                datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
-                        }
 
                     yield {
                         'name': beer_name,

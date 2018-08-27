@@ -20,6 +20,12 @@ from pprint import pprint
 
 CREATION_DATE_KEY = 'creationDate'
 
+def hash_dict(dictionary):
+    """
+    Return the hashcode of the input dictionary. Useful for comparisons.
+    """
+
+    return hash(frozenset(dictionary))
 
 def compare_map(old_map, new_map):
     """Compare two maps and return two maps, where the first map is contains
@@ -32,6 +38,11 @@ def compare_map(old_map, new_map):
     #todo evauluate python sets
     #https://docs.python.org/2/library/sets.html
     #https://wiki.python.org/moin/TimeComplexity
+
+    # check data hash, if equal no changes
+    # frozenset is immutable, so can generate hash
+    if hash(frozenset(old_map)) == hash(frozenset(new_map)):
+        return removed_entries, new_entries
 
     for entry in new_map.keys():
         # check if in oldMap
@@ -51,7 +62,6 @@ def inventory_file_to_dictionary(inventory_file):
     and have the following keys: name and id. An example is given as"
 
       [
-      {"creationDate": "2017-09-07T16:12:30"},
       {"name": "Example Inventory Name", "id": 123456789},
       ...
       ]
@@ -101,24 +111,6 @@ def compare_inventory_files(inventory_file, new_file):
     if os.stat(new_file).st_size == 0:
         logging.error(str(new_file) + ' is empty!')
         return removed, new
-
-    #unlikely
-    if filecmp.cmp(inventory_file, new_file, shallow=False):
-        logging.info(str(inventory_file) + ' is equal to ' +
-                     str(new_file) + ', no differences!')
-        return removed, new
-
-    # todo need a way to either get rid of creation date (to compare files) or
-    # ignore first few lines
-
-    # use bash to compare so we ourselves don't have to go through line by line
-    #
-    #"diff  <(tail -n +3 " + file1 + ") <(tail -n +3 " + file2 + ")
-    #    --strip-trailing-cr | wc -l"
-    #
-    #subprocess.call('diff  <(tail -n +3 ' + 'old_knl_2017-04-10T16:08:57.json'
-    #    + ') <(tail -n +3 ' + 'old_knl_2017-04-10T23:09:04.json' + ')
-    #    --strip-trailing-cr', shell=True)
 
     hash_map1 = inventory_file_to_dictionary(inventory_file)
     hash_map2 = inventory_file_to_dictionary(new_file)

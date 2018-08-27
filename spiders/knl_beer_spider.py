@@ -21,11 +21,6 @@ class KnLBeerSpider(scrapy.Spider):
         'DOWNLOAD_DELAY': str(download_delay)
     }
 
-    def __init__(self, *args, **kwargs):
-
-        self.date_entry = False
-        super(KnLBeerSpider, self).__init__(*args, **kwargs)
-
     def start_requests(self):
 
         urls = [
@@ -68,13 +63,6 @@ class KnLBeerSpider(scrapy.Spider):
                     # filter out location in the name, specific to these scraped results
                     if beer_name != "Redwood City" and beer_name != "Hollywood" \
                             and beer_name != "San Francisco" and 'Read More ' not in beer_name:
-
-                        if not self.date_entry:
-                            self.date_entry = True
-                            yield {
-                                'creationDate': \
-                                    datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
-                            }
 
                         yield {
                             'name': beer_name,

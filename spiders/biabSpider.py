@@ -3,8 +3,6 @@ import datetime
 import logging
 from random import *
 
-dateEntry = False
-
 #can run with scrapy runspider biabSpider.py -o output.json
 
 class BelgiumInABox(scrapy.Spider):
@@ -30,8 +28,6 @@ class BelgiumInABox(scrapy.Spider):
 
     def parse(self, response):
 
-		global dateEntry
-
 		#grab each entry listed
 		if response is not None:
 
@@ -47,11 +43,6 @@ class BelgiumInABox(scrapy.Spider):
 				j    = link.find('-', i)
 				id   = link[i:j]
 
-				if not dateEntry:
-					dateEntry = True
-					yield {
-						'creationDate' : datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
-					}
 				if 'out of stock' in available.lower():
 					logging.warning( 'cannot add ' + str( beerName ) + ', (out of stock)' )
 				else:

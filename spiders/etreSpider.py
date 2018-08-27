@@ -4,7 +4,6 @@ import logging
 from random import *
 
 productKey = '_id='
-dateEntry  = False
 
 #can run with scrapy runspider etreSpider.py -o output.json
 
@@ -23,7 +22,8 @@ class EtreSpider(scrapy.Spider):
 
 	def start_requests(self):
 		urls = [
-		    'http://www.bieresgourmet.be/catalog/index.php?main_page=products_all&disp_order=6' #url for all beer
+		    #'http://www.bieresgourmet.be/catalog/index.php?main_page=products_all&disp_order=6' #url for all beer
+		    'https://www.bieresgourmet.be/en/2-accueil'
 		]
 
 		for url in urls:
@@ -36,12 +36,11 @@ class EtreSpider(scrapy.Spider):
 	def parse(self, response):
 		
 		logger = logging.getLogger(__name__)
-		global dateEntry
 
 		#grab each entry listed
 		if response is not None:
 
-	 		for beer in response.xpath('//td[@class="main"]'):
+	 		for beer in response.xpath('//td[@class="product_item"]'):
 
 				beerName = beer.xpath('a/strong/text()').extract()
 				beerName = ''.join( beerName ).strip()
@@ -56,12 +55,6 @@ class EtreSpider(scrapy.Spider):
 		 			productIndex  += len(productKey) 
 		 			id             = link[productIndex : ampersandIndex] 
 
-					if not dateEntry:
-						dateEntry = True
-						yield {
-							'creationDate' : datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
-						}
-						
 					yield {
 						'name'  : beerName,
 						'id'    : int( id ) 

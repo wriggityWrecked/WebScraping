@@ -5,8 +5,6 @@ from random import *
 
 #scrapy runspider belgianHappinessSpider.py -o output.json
 
-dateEntry = False
-
 class BelgianHappinessSpider(scrapy.Spider):
 	
 	logger        = logging.getLogger(__name__)
@@ -36,7 +34,6 @@ class BelgianHappinessSpider(scrapy.Spider):
 	def parse(self, response):
 
 		logger = logging.getLogger(__name__)
-		global dateEntry
 
 		#grab each entry listed
 		if response is not None:
@@ -46,11 +43,6 @@ class BelgianHappinessSpider(scrapy.Spider):
 				beerName = beer.xpath('.//span[@class="title"]/text()').extract()
 				id       = beer.css('.add-to-cart').xpath('./@data-alpha').extract()
 
-				if not dateEntry:
-					dateEntry = True
-					yield {
-						'creationDate' : datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
-					}
 				if not id:
 					logging.warning( 'cannot add ' + str( beerName ) + ', no ID! (out of stock)' )
 				else:

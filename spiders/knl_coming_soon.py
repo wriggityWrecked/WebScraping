@@ -21,11 +21,6 @@ class KnLComingSoonSpider(scrapy.Spider):
         'DOWNLOAD_DELAY': str(download_delay)
     }
 
-    def __init__(self, *args, **kwargs):
-
-        self.date_entry = False
-        super(KnLComingSoonSpider, self).__init__(*args, **kwargs)
-
     def start_requests(self):
 
         urls = [
@@ -65,13 +60,6 @@ class KnLComingSoonSpider(scrapy.Spider):
                     id_ = ''.join(id_).strip()
                     id_ = id_[7:]
                     beer_name = ''.join(beer_name).strip()
-
-                    if not self.date_entry:
-                        self.date_entry = True
-                        yield {
-                            'creationDate': \
-                                datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
-                        }
 
                     yield {
                         'name': beer_name,
