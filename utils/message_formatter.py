@@ -4,7 +4,7 @@ LOGGER = logging.getLogger(__name__)
 
 ADDED_MAP_KEY = 'added_map'
 REMOVED_MAP_KEY = 'removed_map'
-DEFAULT_LINK_FORMATTER = lambda _id,_name: _name + " : " + _id
+DEFAULT_LINK_FORMATTER = lambda _id,_name: str(_name) + " : " + str(_id)
 #add a method to convert all to string
 
 #todo return a list rather than string for easier unit tests
@@ -62,14 +62,17 @@ def construct_notification_message(results_dictionary, link_format_lambda=DEFAUL
 
     return constructed_added, constructed_removed
 
-def construct_compared_message(compared_number, compared_list, display_format_lambda=DEFAULT_LINK_FORMATTER):
+def construct_compared_message(compared_number, compared_map, display_format_lambda=DEFAULT_LINK_FORMATTER):
     """
     todo document returned list
     todo document default lambda
     """
 
     message = []
-    for t in compared_list.items():
+    
+    #sort the input list
+    sorted(compared_map.items(), key=lambda x:x[1])
+    for t in compared_map.items():
         #index 1 is name, index 0 is ID
         message.append(display_format_lambda(str(t[0]),t[1]))
     return message

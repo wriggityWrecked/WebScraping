@@ -192,9 +192,17 @@ if __name__ == "__main__":
     parser.add_argument('-d', "--debug", action='store_true',
                         help='Run the specified scraper(s) in debug mode')
 
+    parser.add_argument('-b', "--bounds", type=int, nargs='+',
+                        help='Lower and upper bound in seconds')
+
     scraper_names = parser.parse_args().scraper_names
     continuous = parser.parse_args().continuous
     debug_flag = parser.parse_args().debug
+    bounds = parser.parse_args().bounds
+
+    if bounds is not None and len(bounds) != 2:
+        print 'must provide both upper an lower bound'
+        exit()
 
     #get methods from string inputs
     method_list = []    
@@ -203,7 +211,13 @@ if __name__ == "__main__":
 
     if continuous is True:
         print 'Running ' + str(method_list) + " continuously"
-        run_continuous(method_list, debug_flag=debug_flag)
+        if bounds is not None:
+            run_continuous(method_list, debug_flag=debug_flag, lower_bound_seconds=bounds[0], upper_bound_seconds=bounds[1])
+        else:
+            run_continuous(method_list, debug_flag=debug_flag)
     else:
         print 'Running ' + str(method_list) + " once"
-        run(method_list, debug_flag=debug_flag)
+        if bounds is not None:
+            run(method_list, debug_flag=debug_flag, lower_bound_seconds=bounds[0], upper_bound_seconds=bounds[1])
+        else:
+            run(method_list, debug_flag=debug_flag)
