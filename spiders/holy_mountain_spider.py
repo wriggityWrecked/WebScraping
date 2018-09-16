@@ -1,4 +1,4 @@
-"""KNL Spider implementation.
+"""Holy Mountain Spider implementation.
 
 Example:
     $ scrapy runspider holy_mountain_spider.py -o output.json
@@ -22,7 +22,7 @@ IN_HOUSE_STRING = 'Bottles for here'
 TO_GO_STRING = 'Bottles to go'
 
 class HolyMountainSpider(scrapy.Spider):
-    """Simple extension of scrapy.Spider for KnL.
+    """Simple extension of scrapy.Spider for Holy Mountain.
     """
 
     name = "holyMountainSpider"
