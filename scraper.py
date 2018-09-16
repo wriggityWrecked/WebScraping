@@ -19,11 +19,14 @@ from datetime import timedelta, datetime
 from enum import Enum
 from twisted.internet import reactor
 from scrapy.crawler import CrawlerRunner
+from scrapy import signals
+from scrapy.crawler import Crawler
 
 from utils import get_random_user_agent
 from utils.compare_tools import compare_inventory_files, dprint
 from utils.slack_tools import post_message, post_message_to_queue, DEBUG_SLACK_CHANNEL
 from utils import message_formatter
+
 
 class ScraperStage(Enum):
     """
@@ -42,16 +45,15 @@ class ScraperStage(Enum):
 
 
 class Scraper(object):
-
     'Base class for all scrapers'
 
-    def __init__(self, name, spider, slack_channel, product_link_formatter=message_formatter.DEFAULT_LINK_FORMATTER,\
-        multiprocessing_queue=None, debug_flag=False, product_link=None):
+    def __init__(self, name, spider, slack_channel, product_link_formatter=message_formatter.DEFAULT_LINK_FORMATTER, \
+                 multiprocessing_queue=None, debug_flag=False, product_link=None):
 
-        #todo argument check name, spider, slack_channel, product_link, etc
+        # todo argument check name, spider, slack_channel, product_link, etc
 
         self.__stage_lock = threading.Lock()
-        self.stage = ScraperStage.CREATED #todo private access so public getter with lock?
+        self.stage = ScraperStage.CREATED  # todo private access so public getter with lock?
 
         # name of the scraper
         self.name = name
@@ -68,8 +70,8 @@ class Scraper(object):
 
         self.product_link = product_link
 
-        #multiprocessing queue to post results, used among the various processes
-        #to share a slack connection via slack tools
+        # multiprocessing queue to post results, used among the various processes
+        # to share a slack connection via slack tools
         self.multiprocessing_queue = multiprocessing_queue
 
         # base directory of scraper results
@@ -94,25 +96,25 @@ class Scraper(object):
 
         # archive directory of scraper results
         self.archive_directory = self.base_directory + \
-            '/' + now.strftime("%Y-%m")
+                                 '/' + now.strftime("%Y-%m")
 
         # file name to dump Spider JSON output
         # timestamp in case of failures
         self.new_file_name = self.base_directory + '/' + 'new_' + \
-            self.name + 'Result_' + now_string + '.json'
+                             self.name + 'Result_' + now_string + '.json'
 
         # file name to keep as inventory file: used for all new vs old
         # comparisons
         self.inventory_file_name = self.base_directory + \
-            '/' + self.name + 'BeerInventory.json'
+                                   '/' + self.name + 'BeerInventory.json'
 
         # file name for comparison results
         self.results_output_file_name = self.archive_directory + '/' + \
-            'results_' + self.name + 'Beer'  # append time and .json later
+                                        'results_' + self.name + 'Beer'  # append time and .json later
 
         # file name for old inventory data
         self.rotated_file_name = self.archive_directory + '/' + \
-            'old_' + self.name + '_'  # append time and .json later
+                                 'old_' + self.name + '_'  # append time and .json later
 
         # logging directory for this scraper
         self.log_directory = self.base_directory + '/' + 'log'
@@ -132,7 +134,6 @@ class Scraper(object):
         if self.debug_log:
             self.logger.setLevel(logging.DEBUG)
 
-
     def set_stage(self, new_stage):
         """
         Set the current stage of the scraper.
@@ -141,7 +142,6 @@ class Scraper(object):
         with self.__stage_lock:
             print(str(datetime.now()) + ' setting stage to ' + str(new_stage))
             self.stage = new_stage
-
 
     def __str__(self):
 
@@ -159,15 +159,29 @@ class Scraper(object):
 
         return string
 
-
     def terminate(self, signum, frame):
         """
         Method used as a callback for the SIGINT signal handler. 
         """
         self.set_stage(ScraperStage.TERMINATED)
-        #stop the reactor
+        # stop the reactor
         reactor.stop()
 
+    def handle_spider_close(self, spider, reason):
+        #check if the spider closed with an error
+        print("handle_spider_done")
+        print(reason)
+        self.set_stage(ScraperStage.TERMINATED)
+        # stop the reactor
+        reactor.stop()
+
+    def handle_spider_done(self):
+        try:
+            print("handle_spider_done")
+        except:
+            print("WOWOWOWOWOWOWOWOWOWO")
+        finally:
+            reactor.stop()
 
     def check_and_setup_directories(self):
 
@@ -190,7 +204,6 @@ class Scraper(object):
         if os.path.isfile(self.new_file_name):
             logging.warn(self.new_file_name + ' + already exists!')
 
-
     def run_spider(self):
         """
         Rather than using scrapyd or executing the spider manually via scrapy,
@@ -209,7 +222,6 @@ class Scraper(object):
             if self.debug_slack:
                 self.handle_slack_message(DEBUG_SLACK_CHANNEL, 'Starting scraper ' + self.name)
 
-            #configure_logging( {'LOG_FORMAT': '%(levelname)s: %(message)s'} )
             runner = CrawlerRunner({
                 'USER_AGENT': get_random_user_agent.get_random_user_agent(),
                 'FEED_FORMAT': 'json',
@@ -218,18 +230,32 @@ class Scraper(object):
                 'DUPEFILTER_DEBUG': 'True'
             })
 
+            #runner.signals.connect(self.handle_spider_close, signals.spider_closed)
+
             # todo deferred spider or something like
             # https://kirankoduru.github.io/python/multiple-scrapy-spiders.html
             _d = runner.crawl(self.spider)
 
             # stop the reactor when we're done
-            _d.addBoth(lambda _: reactor.stop()) 
-            #http://twistedmatrix.com/documents/9.0.0/core/howto/deferredindepth.html#auto7
-            #https://twistedmatrix.com/documents/17.9.0/api/twisted.internet.defer.Deferred.html
+            _d.addBoth(lambda _: reactor.stop())
+            # http://twistedmatrix.com/documents/9.0.0/core/howto/deferredindepth.html#auto7
+            # https://twistedmatrix.com/documents/17.9.0/api/twisted.internet.defer.Deferred.html
             signal.signal(signal.SIGINT, self.terminate)
             signal.signal(signal.SIGTERM, self.terminate)
+
+            # crawler = Crawler(self.spider, {
+            #     'USER_AGENT': get_random_user_agent.get_random_user_agent(),
+            #     'FEED_FORMAT': 'json',
+            #     'FEED_URI': self.new_file_name,
+            #     'AUTOTHROTTLE_ENABLED': 'True',
+            #     'DUPEFILTER_DEBUG': 'True'
+            # })
+            # crawler.signals.connect(self.handle_spider_close, signal=signals.spider_closed)
+            #
+            # deferred = crawler.crawl()
+            # deferred.addBoth(lambda _: self.handle_spider_done)
+
             reactor.run()
-            # this will block until stop is called / when the crawler is done
 
             return True, None
 
@@ -238,8 +264,7 @@ class Scraper(object):
         except Exception as _e:
             exc_type, exc_value, exec_tb = sys.exc_info()
             return False, 'Caught ' \
-                + str("".join(traceback.format_exception(exc_type, exc_value, exec_tb)))
-
+                   + str("".join(traceback.format_exception(exc_type, exc_value, exec_tb)))
 
     def process_spider_results(self):
         """
@@ -256,7 +281,6 @@ class Scraper(object):
             # Crawling must be successful or the new file and inventory files
             # must exist as this point
             if not os.path.isfile(self.new_file_name):
-
                 reason = str(self.new_file_name) + ' not found!'
                 logging.warning((reason))
 
@@ -264,7 +288,7 @@ class Scraper(object):
 
             if not os.path.isfile(self.inventory_file_name):
                 reason = str(self.inventory_file_name) + ' not found!' + \
-                    ', saving ' + self.new_file_name + ' as ' + self.inventory_file_name
+                         ', saving ' + self.new_file_name + ' as ' + self.inventory_file_name
 
                 logging.info(reason)
                 os.rename(self.new_file_name, self.inventory_file_name)
@@ -299,8 +323,8 @@ class Scraper(object):
             logging.debug('results = ' + str(results))
 
             # save results
-            self.results_output_file_name = self.results_output_file_name + '_'\
-                + now + '.json'
+            self.results_output_file_name = self.results_output_file_name + '_' \
+                                            + now + '.json'
 
             with open(self.results_output_file_name, 'w') as out_file:
                 logging.debug('saving ' + self.results_output_file_name)
@@ -311,8 +335,7 @@ class Scraper(object):
         except Exception as _e:
             exc_type, exc_value, exec_tb = sys.exc_info()
             return False, 'Caught ' \
-                + str("".join(traceback.format_exception(exc_type, exc_value, exec_tb)))
-                
+                   + str("".join(traceback.format_exception(exc_type, exc_value, exec_tb)))
 
     def post_crawl(self):
         """
@@ -333,33 +356,33 @@ class Scraper(object):
             return False, error_message
 
         # post the results to slack
-        #todo deprecate post_to_slack
+        # todo deprecate post_to_slack
         message = self.handle_results(results)
 
         # post to debug slack
         if self.debug_slack:
             self.handle_slack_message(DEBUG_SLACK_CHANNEL, 'Finished crawler ' + self.name \
-                    + ', time taken = ' + str(timedelta(seconds=(time.time() - self.start_time))) \
-                    + ((',' + message) if len(message) > 0 else ''))
+                                      + ', time taken = ' + str(timedelta(seconds=(time.time() - self.start_time))) \
+                                      + ((',' + message) if len(message) > 0 else ''))
 
         return True, message
 
     def handle_results(self, compared_results):
-        #get the message
-        
-        #legacy link
+        # get the message
+
+        # legacy link
         link_lambda = self.product_link_formatter
         if self.product_link is not None:
-            link_lambda = lambda _id,_name: _name + " : " + self.product_link + _id
+            link_lambda = lambda _id, _name: _name + " : " + self.product_link + _id
 
         should_post, message = message_formatter.format_notification_message(compared_results, link_lambda)
-        
-        #post to slack if anything was added
+
+        # post to slack if anything was added
         if should_post:
             self.set_stage(ScraperStage.POSTING_RESULTS)
             self.handle_slack_message(self.slack_channel, message)
 
-        #return the message
+        # return the message
         return message
 
     def report_errors_to_slack(self, error_message):
@@ -367,7 +390,6 @@ class Scraper(object):
         Report / post the input error message to the debug slack channel.
         """
         self.handle_slack_message(DEBUG_SLACK_CHANNEL, error_message)
-
 
     def handle_slack_message(self, slack_channel, message):
         """
@@ -387,7 +409,6 @@ class Scraper(object):
             self.logger.info('handle_slack_message post_message')
             post_message(slack_channel, message)
 
-
     def run(self):
         """ Blocking run.
 
@@ -400,21 +421,19 @@ class Scraper(object):
         """
 
         self.initialize()
-        self.set_stage(ScraperStage.RUNNING) #todo not needed..?
+        self.set_stage(ScraperStage.RUNNING)  # todo not needed..?
 
         success, message = self.run_spider()
 
         if not success or self.stage == ScraperStage.TERMINATED:
-
-            error_message = 'run_spider failed:' + ( " " + str(message) if message else "") \
-                + (" Manually terminated" if self.stage == ScraperStage.TERMINATED else "")
+            error_message = 'run_spider failed:' + (" " + str(message) if message else "") \
+                            + (" Manually terminated" if self.stage == ScraperStage.TERMINATED else "")
             self.logger.error(error_message)
             self.report_errors_to_slack(error_message)
             self.set_stage(ScraperStage.TERMINATED)
             return False, error_message
-        
+
         success, message = self.post_crawl()
 
         self.set_stage(ScraperStage.FINISHED)
         return True, message
-

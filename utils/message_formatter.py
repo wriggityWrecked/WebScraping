@@ -4,7 +4,7 @@ LOGGER = logging.getLogger(__name__)
 
 ADDED_MAP_KEY = 'added_map'
 REMOVED_MAP_KEY = 'removed_map'
-DEFAULT_LINK_FORMATTER = lambda _id,_name: str(_name) + " : " + str(_id)
+DEFAULT_LINK_FORMATTER = lambda _id,_name: str(_name)
 #add a method to convert all to string
 
 #todo return a list rather than string for easier unit tests
@@ -69,10 +69,10 @@ def construct_compared_message(compared_number, compared_map, display_format_lam
     """
 
     message = []
-    
+
     #sort the input list
-    sorted(compared_map.items(), key=lambda x:x[1])
-    for t in compared_map.items():
+    s = sorted(compared_map.items(), key=lambda x:x[1])
+    for t in s:
         #index 1 is name, index 0 is ID
         message.append(display_format_lambda(str(t[0]),t[1]))
     return message

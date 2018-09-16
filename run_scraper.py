@@ -19,9 +19,18 @@ from spiders.etreSpider import EtreSpider
 from spiders.belgianHappinessSpider import BelgianHappinessSpider
 from spiders.biabSpider import BelgiumInABox
 from spiders.total_wine_spider import TotalWineSpider
-
+from spiders.holy_mountain_spider import HolyMountainSpider
 from scraper import Scraper
 
+def holy_mountain(debug_flag=False, multiprocessing_queue=None):
+    """Run the scraper as a standalone script. This method blocks until finished"""
+
+    #todo should be renamed
+    total_wine_scraper = Scraper('holy_mountain', HolyMountainSpider,
+                               'holy_mountain',
+                                multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag)
+
+    print total_wine_scraper.run()
 
 def total_wine(debug_flag=False, multiprocessing_queue=None):
     """Run the scraper as a standalone script. This method blocks until finished"""
@@ -177,7 +186,7 @@ if __name__ == "__main__":
     #https://stackoverflow.com/questions/5910703/howto-get-all-methods-of-a-python-class-with-given-decorator
     methods = {knl_beer.__name__: knl_beer, knl_spirits.__name__: knl_spirits,
         etre.__name__: etre, biab.__name__: biab, belgium_happiness.__name__: belgium_happiness,
-        total_wine.__name__: total_wine, knl_coming_soon.__name__: knl_coming_soon}
+        total_wine.__name__: total_wine, knl_coming_soon.__name__: knl_coming_soon, holy_mountain.__name__: holy_mountain}
 
     parser = argparse.ArgumentParser(
         description='Invoke implemented scrapers by name with run options.')
