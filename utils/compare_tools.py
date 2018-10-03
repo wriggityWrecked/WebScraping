@@ -18,8 +18,6 @@ import logging
 from pprint import pprint
 
 
-CREATION_DATE_KEY = 'creationDate'
-
 def hash_dict(dictionary):
     """
     Return the hashcode of the input dictionary. Useful for comparisons.
@@ -85,8 +83,9 @@ def inventory_file_to_dictionary(inventory_file):
     with open(inventory_file) as json_file:
         data = json.load(json_file)
         for line in data:
-            if CREATION_DATE_KEY not in line:
-                dictionary[line['id']] = line['name'].encode("utf8")
+            # todo check that the line contains ID and NAME
+            # if not then skip
+            dictionary[line['id']] = line['name'].encode("utf8")
 
     return dictionary
 

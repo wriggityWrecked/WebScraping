@@ -7,8 +7,9 @@ Example:
 
 import datetime
 import logging
-from random import randint
 import scrapy
+import constants
+from random import randint
 
 
 class TotalWineSpider(scrapy.Spider):
@@ -21,6 +22,7 @@ class TotalWineSpider(scrapy.Spider):
         'COOKIES_ENABLED': 'false',
         'DOWNLOAD_DELAY': str(download_delay)
     }
+
 
     def start_requests(self):
 
@@ -38,6 +40,7 @@ class TotalWineSpider(scrapy.Spider):
                 '================================================================')
 
             yield scrapy.Request(url=url, callback=self.parse, dont_filter=True)
+
 
     def parse(self, response):
 
@@ -73,13 +76,13 @@ class TotalWineSpider(scrapy.Spider):
                     beer_name = ''.join(beer_name).strip()
 
                     yield {
-                        'name': beer_name,
-                        'id': int(id_)
+                        constants.NAME_KEY: beer_name,
+                        constants.ID_KEY: int(id_)
                     }
 
-        #https://stackoverflow.com/questions/18810850/scrapy-next-button-uses-javascript
+        # https://stackoverflow.com/questions/18810850/scrapy-next-button-uses-javascript
 
-        #check if the next button exists
+        # check if the next button exists
         next_page_button = response.css('a.pager-next')
 
         if next_page_button is None or not next_page_button or len(next_page_button) == 0:
@@ -91,24 +94,6 @@ class TotalWineSpider(scrapy.Spider):
             page_number = int(response.url[page_start+5:page_end]) + 1 #next page
 
             next_page = response.url[0:page_start+5] + str(page_number) + response.url[page_end:]
-
-            # function pagerNav(dir) {
-            #     console.log(dir);
-            #     var sURL = window.location.search
-            #       , iCurPage = TWM.getCommonUrlParameter("page");
-            #     "undefined" == typeof iCurPage && (iCurPage = 1),
-            #     iCurPage = "+" == dir ? parseInt(iCurPage) + 1 : parseInt(iCurPage) - 1,
-            #     sURL = TWM.changeParamByName(sURL, "page", iCurPage),
-            #     window.location.origin || (window.location.origin = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ":" + window.location.port : "")),
-            #     window.location.href = window.location.origin + window.location.pathname + sURL + ("+" == dir ? appendResultsWithOrOpertor() : "")
-            # }
-
-            # function plpPagerNext(_this) {
-            #     var finalURL, sURL = window.location.href, currentAttr = $(_this).attr("twm-href");
-            #     "-1" != sURL.indexOf("operator") && (currentAttr = currentAttr.replace("&operator=or", "")),
-            #     finalURL = -1 != sURL.indexOf("page") ? TWM.changeParamByName(sURL, "page", currentAttr.replace("?page=", "")) : -1 != sURL.indexOf("?") ? sURL + currentAttr.replace("?", "&") : sURL + currentAttr,
-            #     location.href = finalURL
-            # }
 
         if next_page is not None:
             next_page = response.urljoin(next_page)

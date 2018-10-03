@@ -1,5 +1,6 @@
 webscraping/
     __init__.py
+    constants.py
     scheduler.py
     scraper.py
     spiders/

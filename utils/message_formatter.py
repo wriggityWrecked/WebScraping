@@ -5,10 +5,12 @@ LOGGER = logging.getLogger(__name__)
 ADDED_MAP_KEY = 'added_map'
 REMOVED_MAP_KEY = 'removed_map'
 DEFAULT_LINK_FORMATTER = lambda _id,_name: str(_name)
+SIMPLE_PRODUCT_LINK_FORMATTER = lambda _id, _name, _product_link: _name + " : " + _product_link + _id
 #add a method to convert all to string
 
 #todo return a list rather than string for easier unit tests
-def format_notification_message(results_dictionary, link_format_lambda=DEFAULT_LINK_FORMATTER):
+#todo should_post as input, so someone can ask to see what has been removed as well
+def format_notification_message(results_dictionary, link_format_lambda=DEFAULT_LINK_FORMATTER, post_removed=False):
 
     message = ''
     should_post = False
@@ -23,6 +25,13 @@ def format_notification_message(results_dictionary, link_format_lambda=DEFAULT_L
         should_post = True
 
     if removed_number > 0 and len(removed) > 0:
+
+        if post_removed:
+            # force a post if there were items removed
+            # usually it's only useful to post if items are added
+            # but some consumers want removed as well
+            should_post = True
+
         if len(message) > 0:
             message += '\n' + '-' * 25 + '\n\n'
 

@@ -48,7 +48,7 @@ class Scraper(object):
     'Base class for all scrapers'
 
     def __init__(self, name, spider, slack_channel, product_link_formatter=message_formatter.DEFAULT_LINK_FORMATTER, \
-                 multiprocessing_queue=None, debug_flag=False, product_link=None):
+                 multiprocessing_queue=None, debug_flag=False, product_link=None, post_removed=False):
 
         # todo argument check name, spider, slack_channel, product_link, etc
 
@@ -82,6 +82,8 @@ class Scraper(object):
 
         self.debug_log = debug_flag
         self.debug_slack = debug_flag
+
+        self.post_removed = post_removed
 
     def initialize(self):
         """
@@ -130,6 +132,8 @@ class Scraper(object):
         # set format
         logging.basicConfig(filename=self.log_name, filemode='w', level=logging.INFO,
                             format='%(asctime)s:%(levelname)s:%(message)s', datefmt='%Y-%m-%dT%H:%M:%S')
+
+        print('logging to: ' + str(self.log_name))
 
         if self.debug_log:
             self.logger.setLevel(logging.DEBUG)
@@ -184,6 +188,8 @@ class Scraper(object):
             reactor.stop()
 
     def check_and_setup_directories(self):
+
+        #todo move this into utils (file utilities)
 
         # housekeeping for files storage, e.g.
         # named directory for results
@@ -375,7 +381,7 @@ class Scraper(object):
         if self.product_link is not None:
             link_lambda = lambda _id, _name: _name + " : " + self.product_link + _id
 
-        should_post, message = message_formatter.format_notification_message(compared_results, link_lambda)
+        should_post, message = message_formatter.format_notification_message(compared_results, link_format_lambda=link_lambda, post_removed=self.post_removed)
 
         # post to slack if anything was added
         if should_post:

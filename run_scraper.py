@@ -20,84 +20,109 @@ from spiders.belgianHappinessSpider import BelgianHappinessSpider
 from spiders.biabSpider import BelgiumInABox
 from spiders.total_wine_spider import TotalWineSpider
 from spiders.holy_mountain_spider import HolyMountainSpider
+from spiders.cantillion_spider import CantillionSpider
+from spiders.schramms_spider import SchrammsSpider
+
 from scraper import Scraper
+
+
+def schramms(debug_flag=False, multiprocessing_queue=None):
+    """Run the scraper as a standalone script. This method blocks until finished"""
+
+    #todo should be renamed
+    scraper = Scraper('schramms', SchrammsSpider,
+                               'schramms_mead',
+                                multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag)
+
+    print scraper.run()
+
+
+def cantillion(debug_flag=False, multiprocessing_queue=None):
+    """Run the scraper as a standalone script. This method blocks until finished"""
+
+    #todo should be renamed
+    scraper = Scraper('cantillion', CantillionSpider,
+                               'cantillionwatch',
+                                multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag)
+
+    print scraper.run()
+
 
 def holy_mountain(debug_flag=False, multiprocessing_queue=None):
     """Run the scraper as a standalone script. This method blocks until finished"""
 
-    #todo should be renamed
-    total_wine_scraper = Scraper('holy_mountain', HolyMountainSpider,
+    scraper = Scraper('holy_mountain', HolyMountainSpider,
                                'holy_mountain',
-                                multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag)
+                                multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag, post_removed=True)
 
-    print total_wine_scraper.run()
+    print scraper.run()
 
 def total_wine(debug_flag=False, multiprocessing_queue=None):
     """Run the scraper as a standalone script. This method blocks until finished"""
 
     #todo should be renamed
-    total_wine_scraper = Scraper('total_wine', TotalWineSpider,
+    scraper = Scraper('total_wine', TotalWineSpider,
                                'totalwinescraper', product_link='http://www.totalwine.com/p/',
                                 multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag)
 
-    print total_wine_scraper.run()
+    print scraper.run()
 
 
 def knl_beer(debug_flag=False, multiprocessing_queue=None):
     """Run the scraper as a standalone script. This method blocks until finished"""
 
     #todo should be renamed
-    knl_beer_scraper = Scraper('knl', KnLBeerSpider,
+    scraper = Scraper('knl', KnLBeerSpider,
                                'knlscraper', product_link='http://www.klwines.com/p/i?i=',
                                 multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag)
 
-    print knl_beer_scraper.run()
+    print scraper.run()
 
 
 def knl_spirits(debug_flag=False, multiprocessing_queue=None):
     """Run the scraper as a standalone script. This method blocks until finished"""
 
-    knl_spirits_scraper = Scraper('knlSpirits', KnLSpiritsSpider,
+    scraper = Scraper('knlSpirits', KnLSpiritsSpider,
                                    'knlspiritsscraper', product_link='http://www.klwines.com/p/i?i=',
                                     multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag)
 
-    print knl_spirits_scraper.run()
+    print scraper.run()
 
 
 def knl_coming_soon(debug_flag=False, multiprocessing_queue=None):
     """Run the scraper as a standalone script. This method blocks until finished"""
 
-    knl_coming_soon_scraper = Scraper('knlComingSoon', KnLComingSoonSpider,
+    scraper = Scraper('knlComingSoon', KnLComingSoonSpider,
                                    'knlcomingsoon', product_link_formatter=lambda _id,_name: _name + ' : http://www.klwines.com/p/i?i=' + _id,
                                     multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag)
 
-    print knl_coming_soon_scraper.run()
+    print scraper.run()
 
 def etre(debug_flag=False, multiprocessing_queue=None):
     """Run the scraper as a standalone script. This method blocks until finished"""
     
-    etre_scraper = Scraper('etre', EtreSpider,
+    scraper = Scraper('etre', EtreSpider,
                     'etrescraper', product_link='http://www.bieresgourmet.be/catalog/index.php?main_page\
                     =product_info&products_id=', multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag)
 
-    print etre_scraper.run()
+    print scraper.run()
 
 
 def biab(debug_flag=False, multiprocessing_queue=None):
     """Run the scraper as a standalone script. This method blocks until finished"""
 
-    biab_scraper = Scraper('biab', BelgiumInABox, 'biabscraper', multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag)
+    scraper = Scraper('biab', BelgiumInABox, 'biabscraper', multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag)
 
-    print biab_scraper.run()
+    print scraper.run()
 
 
 def belgium_happiness(debug_flag=False, multiprocessing_queue=None):
     """Run the scraper as a standalone script. This method blocks until finished"""
 
-    bh_scraper = Scraper('belgianHappiness', BelgianHappinessSpider, 'belgianhappiness', 
+    scraper = Scraper('belgianHappiness', BelgianHappinessSpider, 'belgianhappiness', 
         multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag)
 
-    print bh_scraper.run()
+    print scraper.run()
 
 #rename run serial
 def run(methods_to_run, debug_flag=False, multiprocessing_queue=None):
@@ -186,7 +211,9 @@ if __name__ == "__main__":
     #https://stackoverflow.com/questions/5910703/howto-get-all-methods-of-a-python-class-with-given-decorator
     methods = {knl_beer.__name__: knl_beer, knl_spirits.__name__: knl_spirits,
         etre.__name__: etre, biab.__name__: biab, belgium_happiness.__name__: belgium_happiness,
-        total_wine.__name__: total_wine, knl_coming_soon.__name__: knl_coming_soon, holy_mountain.__name__: holy_mountain}
+        total_wine.__name__: total_wine, knl_coming_soon.__name__: knl_coming_soon,
+        holy_mountain.__name__: holy_mountain, cantillion.__name__: cantillion,
+        schramms.__name__: schramms}
 
     parser = argparse.ArgumentParser(
         description='Invoke implemented scrapers by name with run options.')

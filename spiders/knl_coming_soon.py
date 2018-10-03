@@ -8,6 +8,7 @@ Example:
 import datetime
 import logging
 import scrapy
+import constants
 
 
 class KnLComingSoonSpider(scrapy.Spider):
@@ -37,7 +38,7 @@ class KnLComingSoonSpider(scrapy.Spider):
             logging.info(
                 '================================================================')
 
-            yield scrapy.Request(url=url, callback=self.parse, dont_filter=True)
+            yield scrapy.Request(url=url, callback=self.parse, dont_filter=False)
 
     def parse(self, response):
 
@@ -62,6 +63,6 @@ class KnLComingSoonSpider(scrapy.Spider):
                     beer_name = ''.join(beer_name).strip()
 
                     yield {
-                        'name': beer_name,
-                        'id': int(id_)
+                        constants.NAME_KEY: beer_name,
+                        constants.ID_KEY: int(id_)
                     }
