@@ -189,6 +189,8 @@ class Scraper(object):
 
     def check_and_setup_directories(self):
 
+        #todo this should only be done as an initialization step
+
         #todo move this into utils (file utilities)
 
         # housekeeping for files storage, e.g.
@@ -414,6 +416,13 @@ class Scraper(object):
 
             self.logger.info('handle_slack_message post_message')
             post_message(slack_channel, message)
+
+
+    #todo need a continuous method
+    #1). keep the inventory in memory, reduce IO time
+    #2). only write inventory to file when done notifying any changes or when quitting (keep in memory until done)
+    #3). handle running at random intervals like run_scraper
+    #4). this will required a scrapy spider pipeline to send results to memory rather than a file
 
     def run(self):
         """ Blocking run.

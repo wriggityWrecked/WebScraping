@@ -41,11 +41,11 @@ class HolyMountainSpider(scrapy.Spider):
         logging.getLogger(__name__)
 
         for url in urls:
-            logging.info(
-                '================================================================')
-            logging.info('scraping ' + url)
-            logging.info(
-                '================================================================')
+            # logging.info(
+            #     '================================================================')
+            # logging.info('scraping ' + url)
+            # logging.info(
+            #     '================================================================')
 
             yield scrapy.Request(url=url, callback=self.parse, dont_filter=True)
 
@@ -63,7 +63,7 @@ class HolyMountainSpider(scrapy.Spider):
                     availbility = section.xpath('./h1/text()').extract()
 
                     if TAP_STRING in availbility:
-                        current_section = Section.ON_TAP
+                        current_section = Section.ON_TAP    
                     elif IN_HOUSE_STRING in availbility:
                         current_section = Section.IN_HOUSE
                     elif TO_GO_STRING in availbility:
@@ -73,9 +73,12 @@ class HolyMountainSpider(scrapy.Spider):
 
                 elif 'beer-output' in section.extract():
                     name = section.css('div.beer-output-data').xpath('./h3/text()').extract()[0]
-
+                    style = section.css('div.beer-output-data').xpath('./h4/text()').extract()[0]
+                    
                     if name is not None:
-                        full_name = str(current_section.name)  + " - " + str(name)
+
+                        #full_name = str(current_section.name)  + " - " + str(name)
+                        full_name = ' - '.join((current_section.name, name, style)).encode('utf-8').strip()
                         hash_id = hashlib.md5(full_name).hexdigest()
 
                         yield {

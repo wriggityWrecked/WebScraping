@@ -15,6 +15,8 @@ from random import randint, normalvariate
 from spiders.knl_beer_spider import KnLBeerSpider
 from spiders.knl_spirits_spider import KnLSpiritsSpider
 from spiders.knl_coming_soon import KnLComingSoonSpider
+from spiders.knl_new_product import KnLNewProductSpider
+
 from spiders.etreSpider import EtreSpider
 from spiders.belgianHappinessSpider import BelgianHappinessSpider
 from spiders.biabSpider import BelgiumInABox
@@ -98,6 +100,15 @@ def knl_coming_soon(debug_flag=False, multiprocessing_queue=None):
 
     print scraper.run()
 
+def knl_new_product(debug_flag=False, multiprocessing_queue=None):
+    """Run the scraper as a standalone script. This method blocks until finished"""
+
+    scraper = Scraper('knlNewProduct', KnLNewProductSpider,
+                                   'knl_new_product', product_link_formatter=lambda _id,_name: _name + ' : http://www.klwines.com/p/i?i=' + _id,
+                                    multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag)
+
+    print scraper.run()
+
 def etre(debug_flag=False, multiprocessing_queue=None):
     """Run the scraper as a standalone script. This method blocks until finished"""
     
@@ -170,7 +181,7 @@ def run_parallel(methods_to_run, debug_flag=False, multiprocessing_queue=None):
     print('\n' + str(datetime.now()) + 'Finished\n')
 
 
-def run_continuous(methods_to_run, debug_flag=False, lower_bound_seconds=30, upper_bound_seconds=60):
+def run_continuous(methods_to_run, debug_flag=False, lower_bound_seconds=0, upper_bound_seconds=0):
     """
     Hackish method to run manually via command line with a random sleep interval. 
     """
@@ -213,7 +224,7 @@ if __name__ == "__main__":
         etre.__name__: etre, biab.__name__: biab, belgium_happiness.__name__: belgium_happiness,
         total_wine.__name__: total_wine, knl_coming_soon.__name__: knl_coming_soon,
         holy_mountain.__name__: holy_mountain, cantillion.__name__: cantillion,
-        schramms.__name__: schramms}
+        schramms.__name__: schramms, knl_new_product.__name__: knl_new_product}
 
     parser = argparse.ArgumentParser(
         description='Invoke implemented scrapers by name with run options.')
@@ -239,6 +250,7 @@ if __name__ == "__main__":
     if bounds is not None and len(bounds) != 2:
         print 'must provide both upper an lower bound'
         exit()
+    # if bounds not none then auto continuous?
 
     #get methods from string inputs
     method_list = []    
@@ -253,7 +265,4 @@ if __name__ == "__main__":
             run_continuous(method_list, debug_flag=debug_flag)
     else:
         print 'Running ' + str(method_list) + " once"
-        if bounds is not None:
-            run(method_list, debug_flag=debug_flag, lower_bound_seconds=bounds[0], upper_bound_seconds=bounds[1])
-        else:
-            run(method_list, debug_flag=debug_flag)
+        run(method_list, debug_flag=debug_flag)

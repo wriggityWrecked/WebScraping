@@ -23,7 +23,9 @@ class KnLSpiritsSpider(scrapy.Spider):
     def start_requests(self):
 
         urls = [
-            'http://www.klwines.com/Products/r?r=0+4294967191&d=1&t=&o=8&z=False'  # url for all spirits
+            #'http://www.klwines.com/Products/r?r=0+4294967191&d=1&t=&o=8&z=False'  # url for all spirits
+            #'https://www.klwines.com/Spirits'
+            'https://www.klwines.com/Products?&filters=-_x-_v%22p%22-_i%2230%22-_q%22o%22-_i%22eq%22-_q%22v%22-_i%22Distilled+Spirits%22-_q%22vi%22-_itrue-_q%22t%22-_i%22ff-30-Distilled+Spirits--%22-_q%22f%22-_i-_xx_-v_--_q-_v%22p%22-_i%2242%22-_q%22o%22-_i%22eq%22-_q%22v%22-_i0-_q%22vi%22-_itrue-_q%22t%22-_i%22ff-42-0--%22-_q%22f%22-_i-_xx_-v_-x_-&limit=500&offset=0&orderBy=&searchText='
         ]
 
         logging.getLogger(__name__)
@@ -35,7 +37,7 @@ class KnLSpiritsSpider(scrapy.Spider):
             logging.info(
                 '================================================================')
 
-            yield scrapy.Request(url=url, callback=self.parse, dont_filter=True)
+            yield scrapy.Request(url=url, callback=self.parse, dont_filter=False)
 
     def parse(self, response):
 
@@ -59,14 +61,11 @@ class KnLSpiritsSpider(scrapy.Spider):
                     id_ = id_[7:]
                     beer_name = ''.join(beer_name).strip()
 
-                    # filter out location in the name, specific to these scraped results
-                    if beer_name != "Redwood City" and beer_name != "Hollywood" \
-                            and beer_name != "San Francisco" and 'Read More ' not in beer_name:
-
-                        yield {
-                            'name': beer_name,
-                            'id': int(id_)
-                        }
+                    #todo check inventory
+                    yield {
+                        'name': beer_name,
+                        'id': int(id_)
+                    }
 
         links = response.xpath(
             '//div[@class="floatLeft"]/a[contains(text(),"next")]/@href').extract()
