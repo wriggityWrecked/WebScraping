@@ -72,16 +72,23 @@ class HolyMountainSpider(scrapy.Spider):
                         current_section = Section.UNKNOWN
 
                 elif 'beer-output' in section.extract():
-                    name = section.css('div.beer-output-data').xpath('./h3/text()').extract()[0]
-                    style = section.css('div.beer-output-data').xpath('./h4/text()').extract()[0]
-                    
-                    if name is not None:
 
-                        #full_name = str(current_section.name)  + " - " + str(name)
-                        full_name = ' - '.join((current_section.name, name, style)).encode('utf-8').strip()
-                        hash_id = hashlib.md5(full_name).hexdigest()
+                    if 'h3' in section.extract():
+                        name = section.css('div.beer-output-data').xpath('./h3/text()').extract()[0]
+                        
+                        style = ''
+                        
+                        if 'h4' in section.extract():
+                            tmp = section.css('div.beer-output-data').xpath('./h4/text()').extract()
+                            if len(tmp) > 0:
+                                style = tmp[0]
+                        
+                        if name is not None:
 
-                        yield {
-                            'name': full_name,
-                            'id': hash_id
-                        }
+                            full_name = ' - '.join((current_section.name, name, style)).encode('utf-8').strip()
+                            hash_id = hashlib.md5(full_name).hexdigest()
+
+                            yield {
+                                'name': full_name,
+                                'id': hash_id
+                            }

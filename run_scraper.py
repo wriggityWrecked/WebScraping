@@ -96,7 +96,7 @@ def knl_coming_soon(debug_flag=False, multiprocessing_queue=None):
 
     scraper = Scraper('knlComingSoon', KnLComingSoonSpider,
                                    'knlcomingsoon', product_link_formatter=lambda _id,_name: _name + ' : http://www.klwines.com/p/i?i=' + _id,
-                                    multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag)
+                                    multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag, post_removed=True)
 
     print scraper.run()
 

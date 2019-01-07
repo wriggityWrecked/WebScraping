@@ -58,10 +58,10 @@ class BelgiumInABox(scrapy.Spider):
 		if len( links ) > 0:
 			next_page = 'https://belgiuminabox.com' + links[0];
 
-		if next_page is not None:	
-			next_page = response.urljoin( next_page )
-			logging.info( '================================================================' )
-			logging.info( 'scraping ' + str( next_page ) )
-			logging.info( '================================================================' )
-			yield scrapy.Request(next_page, callback=self.parse)
+		# if next_page is not None:	
+		# 	next_page = response.urljoin( next_page )
+		# 	logging.info( '================================================================' )
+		# 	logging.info( 'scraping ' + str( next_page ) )
+		# 	logging.info( '================================================================' )
+		# 	yield scrapy.Request(next_page, callback=self.parse)
 
