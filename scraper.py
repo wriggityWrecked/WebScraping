@@ -48,7 +48,7 @@ class Scraper(object):
     'Base class for all scrapers'
 
     def __init__(self, name, spider, slack_channel, product_link_formatter=message_formatter.DEFAULT_LINK_FORMATTER, \
-                 multiprocessing_queue=None, debug_flag=False, product_link=None, post_removed=False):
+                 multiprocessing_queue=None, debug_flag=False, product_link=None, post_removed=False, post_to_slack=True):
 
         # todo argument check name, spider, slack_channel, product_link, etc
 
@@ -80,9 +80,7 @@ class Scraper(object):
 
         self.start_time = 0
 
-        self.debug_log = debug_flag
-        self.debug_slack = debug_flag
-
+        self.debug_flag = debug_flag
         self.post_removed = post_removed
 
     def initialize(self):
@@ -135,7 +133,7 @@ class Scraper(object):
 
         print('logging to: ' + str(self.log_name))
 
-        if self.debug_log:
+        if self.debug_flag:
             self.logger.setLevel(logging.DEBUG)
 
     def set_stage(self, new_stage):
@@ -227,7 +225,7 @@ class Scraper(object):
             self.start_time = time.time()
 
             # post debug message to slack
-            if self.debug_slack:
+            if self.debug_flag:
                 self.handle_slack_message(DEBUG_SLACK_CHANNEL, 'Starting scraper ' + self.name)
 
             runner = CrawlerRunner({
@@ -311,7 +309,8 @@ class Scraper(object):
                 self.inventory_file_name, self.new_file_name)
 
             # debug printing
-            dprint(removed, added)
+            if self.debug_flag:
+                dprint(removed, added)
 
             # now we have a new inventory file, rotating to inventory_file_name
             now = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
@@ -368,7 +367,7 @@ class Scraper(object):
         message = self.handle_results(results)
 
         # post to debug slack
-        if self.debug_slack:
+        if self.debug_flag:
             self.handle_slack_message(DEBUG_SLACK_CHANNEL, 'Finished crawler ' + self.name \
                                       + ', time taken = ' + str(timedelta(seconds=(time.time() - self.start_time))) \
                                       + ((',' + message) if len(message) > 0 else ''))

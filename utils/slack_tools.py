@@ -13,6 +13,7 @@ from multiprocessing import Queue
 from Queue import Empty
 from slackclient import SlackClient
 from websocket import WebSocketConnectionClosedException
+from multiprocessing import Process
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.addHandler(logging.StreamHandler(sys.stdout))
@@ -21,6 +22,9 @@ TOKEN_FILE_PATH_AND_NAME = os.path.join(os.path.dirname(__file__), 'slackToken')
 
 DEBUG_SLACK_CHANNEL = 'robot_comms'
 
+slack_token = ""
+with open(TOKEN_FILE_PATH_AND_NAME) as f:
+	slack_token = str(f.read()).strip()
 
 class SlackPost(object):
 
@@ -142,9 +146,9 @@ def main():
 	
     parser = argparse.ArgumentParser(
         description='Post to a slack channel given said channel and slack token')
-    parser.add_argument('channel', metavar='Channel Name',
+    parser.add_argument('-c','--channel', metavar='Channel Name',
                         help='The channel in which to post a message')
-    parser.add_argument('message', metavar='Message to Post',
+    parser.add_argument('-m','--message', metavar='Message to Post',
                         help='The message to post to a slack channel')
     #todo optional token
     # parser.add_argument('--token', metavar='Slack Token File Path',
@@ -155,7 +159,14 @@ def main():
 
     post_message(channel, message)
 
+def f1():
+    post_message('robot_comms','test1')
+def f2():
+    post_message('robot_comms','test2')
 
 if __name__ == "__main__":
-	main()
+     p1 = Process(target = f1)
+     p1.start()
+     p2 = Process(target = f2)
+     p2.start()
 	
