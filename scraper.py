@@ -82,6 +82,7 @@ class Scraper(object):
 
         self.debug_flag = debug_flag
         self.post_removed = post_removed
+        self.post_to_slack = post_to_slack
 
     def initialize(self):
         """
@@ -131,9 +132,8 @@ class Scraper(object):
         logging.basicConfig(filename=self.log_name, filemode='w', level=logging.INFO,
                             format='%(asctime)s:%(levelname)s:%(message)s', datefmt='%Y-%m-%dT%H:%M:%S')
 
-        print('logging to: ' + str(self.log_name))
-
         if self.debug_flag:
+            print('logging to: ' + str(self.log_name))  
             self.logger.setLevel(logging.DEBUG)
 
     def set_stage(self, new_stage):
@@ -142,7 +142,13 @@ class Scraper(object):
         """
 
         with self.__stage_lock:
-            print(str(datetime.now()) + ' setting stage to ' + str(new_stage))
+
+            stage_string = str(datetime.now()) + ' setting stage to ' + str(new_stage)
+
+            if self.debug_flag:
+                print(stage_string)
+
+            logging.info(stage_string) #hack to log initialized state
             self.stage = new_stage
 
     def __str__(self):
@@ -171,8 +177,8 @@ class Scraper(object):
 
     def handle_spider_close(self, spider, reason):
         #check if the spider closed with an error
-        print("handle_spider_done")
-        print(reason)
+        #print("handle_spider_done")
+        #print(reason)
         self.set_stage(ScraperStage.TERMINATED)
         # stop the reactor
         reactor.stop()
@@ -225,7 +231,7 @@ class Scraper(object):
             self.start_time = time.time()
 
             # post debug message to slack
-            if self.debug_flag:
+            if self.debug_flag and self.post_to_slack:
                 self.handle_slack_message(DEBUG_SLACK_CHANNEL, 'Starting scraper ' + self.name)
 
             runner = CrawlerRunner({
@@ -366,11 +372,14 @@ class Scraper(object):
         # todo deprecate post_to_slack
         message = self.handle_results(results)
 
-        # post to debug slack
-        if self.debug_flag:
-            self.handle_slack_message(DEBUG_SLACK_CHANNEL, 'Finished crawler ' + self.name \
+        finished_data = 'Finished crawler ' + self.name \
                                       + ', time taken = ' + str(timedelta(seconds=(time.time() - self.start_time))) \
-                                      + ((',' + message) if len(message) > 0 else ''))
+                                      + ((',' + message) if len(message) > 0 else '')
+        self.logger.info(finished_data)
+        
+        # post to debug slack
+        if self.debug_flag and self.post_to_slack:
+            self.handle_slack_message(DEBUG_SLACK_CHANNEL, finished_data)
 
         return True, message
 
@@ -404,17 +413,19 @@ class Scraper(object):
         the multiprocessing queue has been set via the constructor. 
         """
 
-        self.logger.info('handle_slack_message ' + str(slack_channel) + " " + str(message))
+        if self.post_to_slack:
 
-        if self.multiprocessing_queue is not None:
+            self.logger.info('handle_slack_message ' + str(slack_channel) + " " + str(message))
 
-            self.logger.info('handle_slack_message posting to queue')
-            post_message_to_queue(self.multiprocessing_queue, slack_channel, message)
+            if self.multiprocessing_queue is not None:
 
-        else:
+                self.logger.info('handle_slack_message posting to queue')
+                post_message_to_queue(self.multiprocessing_queue, slack_channel, message)
 
-            self.logger.info('handle_slack_message post_message')
-            post_message(slack_channel, message)
+            else:
+
+                self.logger.info('handle_slack_message post_message')
+                post_message(slack_channel, message)
 
 
     #todo need a continuous method

@@ -84,7 +84,7 @@ def construct_compared_message(compared_number, compared_map, display_format_lam
     for t in s:
         #index 1 is name, index 0 is ID
         #todo this is brittle, there could be multiple keys
-        print 't in link format lambda:' + str(t)
+        #print 't in link format lambda:' + str(t)
         message.append(display_format_lambda(str(t[0]),t[1]))
     return message
 
