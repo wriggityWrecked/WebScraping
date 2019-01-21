@@ -412,10 +412,9 @@ class Scraper(object):
         Post a message to slack. Use the slack_tools module unless
         the multiprocessing queue has been set via the constructor. 
         """
+        self.logger.info('handle_slack_message ' + str(slack_channel) + " " + str(message))
 
         if self.post_to_slack:
-
-            self.logger.info('handle_slack_message ' + str(slack_channel) + " " + str(message))
 
             if self.multiprocessing_queue is not None:
 

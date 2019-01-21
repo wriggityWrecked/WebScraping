@@ -17,7 +17,7 @@ from spiders.knl_spirits_spider import KnLSpiritsSpider
 from spiders.knl_coming_soon import KnLComingSoonSpider
 from spiders.knl_new_product import KnLNewProductSpider
 
-from spiders.etreSpider import EtreSpider
+from spiders.etre_spider import EtreSpider
 from spiders.belgianHappinessSpider import BelgianHappinessSpider
 from spiders.biabSpider import BelgiumInABox
 from spiders.total_wine_spider import TotalWineSpider
@@ -128,8 +128,9 @@ def etre(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
                     'etrescraper', product_link='http://www.bieresgourmet.be/catalog/index.php?main_page\
                     =product_info&products_id=', multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag, post_to_slack=post_to_slack)
 
-    #print scraper.run()
-
+    output = scraper.run()
+    if debug_flag:
+        print output
 
 def biab(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
     """Run the scraper as a standalone script. This method blocks until finished"""
@@ -163,7 +164,7 @@ def run(methods_to_run, debug_flag=False, multiprocessing_queue=None, post_to_sl
         if debug_flag:
             print('\n' + str(datetime.now()) + ' Starting ' + str(method))
         _p = Process(target=method, args=(), kwargs={'debug_flag': debug_flag,
-         'multiprocessing_queue':multiprocessing_queue, 'post_to_slack': post_to_slack})
+         'multiprocessing_queue': multiprocessing_queue, 'post_to_slack': post_to_slack})
         _p.start()
         _p.join()
 
@@ -190,7 +191,7 @@ def run_parallel(methods_to_run, debug_flag=False, multiprocessing_queue=None):
             print('\n' + str(datetime.now()) + 'Starting ' + str(method))
         
         pool.apply_async(method, args=(), kwds={'debug_flag': debug_flag,
-         'multiprocessing_queue':multiprocessing_queue})
+         'multiprocessing_queue': multiprocessing_queue})
 
     pool.close()
     pool.join()
@@ -210,7 +211,7 @@ def run_continuous(methods_to_run, debug_flag=False, lower_bound_seconds=0, uppe
         while True:
 
             #todo time this
-            run(methods_to_run, debug_flag, post_to_slack)
+            run(methods_to_run, debug_flag=debug_flag, post_to_slack=post_to_slack)
 
             random_wait_time_seconds = randint(lower_bound_seconds, upper_bound_seconds)
             #     random_wait_time_seconds = normalvariate(25*60, 5*60)
@@ -279,14 +280,17 @@ if __name__ == "__main__":
     for name in scraper_names:
         method_list.append(methods[name])
 
-    if continuous is True:
+    if continuous:
+
         if debug_flag:
             print 'Running ' + str(method_list) + " continuously"
+
         if bounds is not None:
             run_continuous(method_list, debug_flag=debug_flag, lower_bound_seconds=bounds[0], upper_bound_seconds=bounds[1], post_to_slack=silent)
         else:
             run_continuous(method_list, debug_flag=debug_flag, post_to_slack=silent)
     else:
+
         if debug_flag:
             print 'Running ' + str(method_list) + " once"
         run(method_list, debug_flag=debug_flag)
