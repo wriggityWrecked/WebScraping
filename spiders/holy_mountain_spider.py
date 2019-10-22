@@ -74,8 +74,14 @@ class HolyMountainSpider(scrapy.Spider):
                 elif 'beer-output' in section.extract():
 
                     if 'h3' in section.extract():
-                        name = section.css('div.beer-output-data').xpath('./h3/text()').extract()[0]
-                        
+                        name = section.css('div.beer-output-data').xpath('./h3/text()').extract()
+
+                        if len(name) == 0:
+                            # no name
+                            continue
+                        else:
+                            name = name[0]
+
                         style = ''
                         
                         if 'h4' in section.extract():
