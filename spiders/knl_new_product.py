@@ -18,7 +18,7 @@ class KnLNewProductSpider(scrapy.Spider):
     """
 
     name = "knlNewProductSpider"
-    download_delay = 1
+    download_delay = 0
     custom_settings = {
         'COOKIES_ENABLED': 'false',
         'DOWNLOAD_DELAY': str(download_delay),
@@ -28,8 +28,8 @@ class KnLNewProductSpider(scrapy.Spider):
     def start_requests(self):
 
         urls = [
-            'https://www.klwines.com/Products?&filters=-_x-_v%22p%22-_i%22NewProductFeedYN%22-_q%22o%22-_i%22eq%22-_q%22v%22-_i1-_q%22vi%22-_itrue-_q%22t%22-_i%22ProductFeed%22-_q%22f%22-_i-_xx_-v_--_q-_v%22t%22-_i%22dflt-stock-all%22v_--_q-_v%22p%22-_i%2230%22-_q%22o%22-_i%22eq%22-_q%22v%22-_i%22Beer%22-_q%22vi%22-_itrue-_q%22t%22-_i%22ff-30-Beer--%22-_q%22f%22-_i-_xx_-v_-x_-&limit=500&offset=0&orderBy=NewProductFeedDate%20desc&searchText=',
-            'https://www.klwines.com/Products?&filters=-_x-_v%22p%22-_i%22NewProductFeedYN%22-_q%22o%22-_i%22eq%22-_q%22v%22-_i1-_q%22vi%22-_itrue-_q%22t%22-_i%22ProductFeed%22-_q%22f%22-_i-_xx_-v_--_q-_v%22t%22-_i%22dflt-stock-all%22v_--_q-_v%22p%22-_i%2230%22-_q%22o%22-_i%22eq%22-_q%22v%22-_i%22Distilled+Spirits%22-_q%22vi%22-_itrue-_q%22t%22-_i%22ff-30-Distilled+Spirits--%22-_q%22f%22-_i-_xx_-v_-x_-&limit=500&offset=0&orderBy=NewProductFeedDate%20desc&searchText='
+            'https://www.klwines.com/Products?&filters=sv2_NewProductFeedYN$eq$1$True$ProductFeed$!dflt-stock-all!203&limit=500&offset=0&orderBy=60%20asc,NewProductFeedDate%20desc&searchText=',
+            'https://www.klwines.com/Products?&filters=sv2_NewProductFeedYN$eq$1$True$ProductFeed$!dflt-stock-all!206&limit=500&offset=0&orderBy=60%20asc,NewProductFeedDate%20desc&searchText='
         ]
 
         logging.getLogger(__name__)
@@ -57,17 +57,16 @@ class KnLNewProductSpider(scrapy.Spider):
    
                 if 'Sold Out' not in stock:
 
-                    link = item.xpath('td[4]//a//@href').extract_first()                
+                    id_ = item.xpath('td[2]//text()').extract_first()
                     name = item.xpath('td[4]//text()').extract_first()
                     # cleanup for json storage
-                    id_ = ''.join(link).strip()
-                    id_ = id_[7:]
+                    id_ = ''.join(id_).strip()
                     name = ''.join(name).strip()
                     #todo GET INVENTORY
 
                     yield {
                         'name': name,
-                        'id': int(id_)
+                        'id': id_
                     }
                     
             links = response.xpath(

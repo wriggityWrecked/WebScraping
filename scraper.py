@@ -140,7 +140,6 @@ class Scraper(object):
         """
         Set the current stage of the scraper.
         """
-
         with self.__stage_lock:
 
             stage_string = str(datetime.now()) + ' setting stage to ' + str(new_stage)
@@ -233,6 +232,8 @@ class Scraper(object):
             # post debug message to slack
             if self.debug_flag and self.post_to_slack:
                 self.handle_slack_message(DEBUG_SLACK_CHANNEL, 'Starting scraper ' + self.name)
+            elif self.debug_flag:
+                self.logger.info('Starting scraper ' + self.name)
 
             runner = CrawlerRunner({
                 'USER_AGENT': get_random_user_agent.get_random_user_agent(),
@@ -268,7 +269,6 @@ class Scraper(object):
             # deferred.addBoth(lambda _: self.handle_spider_done)
 
             reactor.run()
-
             return True, None
 
         except KeyboardInterrupt:
@@ -385,16 +385,20 @@ class Scraper(object):
 
     def handle_results(self, compared_results):
         # get the message
+        print(compared_results)
 
         # legacy link
         link_lambda = self.product_link_formatter
         if self.product_link is not None:
             link_lambda = lambda _id, _name: _name + " : " + self.product_link + _id
 
-        should_post, message = message_formatter.format_notification_message(compared_results, link_format_lambda=link_lambda, post_removed=self.post_removed)
+        should_post, message = message_formatter.format_notification_message(compared_results,
+                                                                             link_format_lambda=link_lambda,
+                                                                             post_removed=self.post_removed)
 
         # post to slack if anything was added
         if should_post:
+            self.logger.info(message)
             self.set_stage(ScraperStage.POSTING_RESULTS)
             self.handle_slack_message(self.slack_channel, message)
 

@@ -18,7 +18,7 @@ class KnLComingSoonSpider(scrapy.Spider):
     """
 
     name = "knlBeerSpider"
-    download_delay = 1
+    download_delay = 0 # todo zero?
     custom_settings = {
         'COOKIES_ENABLED': 'false',
         'DOWNLOAD_DELAY': str(download_delay),
@@ -28,8 +28,8 @@ class KnLComingSoonSpider(scrapy.Spider):
     def start_requests(self):
 
         urls = [
-            'https://www.klwines.com/Products?&filters=-_x-_v%22p%22-_i%2247%22-_q%22o%22-_i%22eq%22-_q%22v%22-_i1-_q%22vi%22-_itrue-_q%22t%22-_i%22coming-soon%22-_q%22f%22-_i-_x-_v%22l%22-_i%22and%22-_q%22f%22-_i-_v%22p%22-_i%2258%22-_q%22o%22-_i%22gt%22-_q%22v%22-_i0-_q%22vi%22-_itrue-_q%22t%22-_i%22%22-_q%22f%22-_i-_xx_-v_-v_--_q-_v%22l%22-_i%22and%22-_q%22f%22-_i-_v%22p%22-_i%2257%22-_q%22o%22-_i%22le%22-_q%22v%22-_i0-_q%22vi%22-_itrue-_q%22t%22-_i%22%22-_q%22f%22-_i-_xx_-v_-v_--_q-_v%22l%22-_i%22and%22-_q%22f%22-_i-_v%22p%22-_i%2248%22-_q%22o%22-_i%22eq%22-_q%22v%22-_i0-_q%22vi%22-_itrue-_q%22t%22-_i%22%22-_q%22f%22-_i-_xx_-v_-v_-x_-v_--_q-_v%22t%22-_i%22dflt-stock-all%22v_--_q-_v%22p%22-_i%2230%22-_q%22o%22-_i%22eq%22-_q%22v%22-_i%22Beer%22-_q%22vi%22-_itrue-_q%22t%22-_i%22ff-30-Beer--%22-_q%22f%22-_i-_xx_-v_-x_-&limit=500&offset=0&orderBy=&searchText=',
-            'https://www.klwines.com/Products?&filters=-_x-_v%22p%22-_i%2247%22-_q%22o%22-_i%22eq%22-_q%22v%22-_i1-_q%22vi%22-_itrue-_q%22t%22-_i%22coming-soon%22-_q%22f%22-_i-_x-_v%22l%22-_i%22and%22-_q%22f%22-_i-_v%22p%22-_i%2258%22-_q%22o%22-_i%22gt%22-_q%22v%22-_i0-_q%22vi%22-_itrue-_q%22t%22-_i%22%22-_q%22f%22-_i-_xx_-v_-v_--_q-_v%22l%22-_i%22and%22-_q%22f%22-_i-_v%22p%22-_i%2257%22-_q%22o%22-_i%22le%22-_q%22v%22-_i0-_q%22vi%22-_itrue-_q%22t%22-_i%22%22-_q%22f%22-_i-_xx_-v_-v_--_q-_v%22l%22-_i%22and%22-_q%22f%22-_i-_v%22p%22-_i%2248%22-_q%22o%22-_i%22eq%22-_q%22v%22-_i0-_q%22vi%22-_itrue-_q%22t%22-_i%22%22-_q%22f%22-_i-_xx_-v_-v_-x_-v_--_q-_v%22t%22-_i%22dflt-stock-all%22v_--_q-_v%22p%22-_i%2230%22-_q%22o%22-_i%22eq%22-_q%22v%22-_i%22Distilled+Spirits%22-_q%22vi%22-_itrue-_q%22t%22-_i%22ff-30-Distilled+Spirits--%22-_q%22f%22-_i-_xx_-v_-x_-&limit=500&offset=0&orderBy=&searchText='
+            'https://www.klwines.com/Products?&filters=sv2_47$eq$1$True$coming-soon$and,58$gt$0$True$$.and,57$le$0$True$$.and,48$eq$0$True$$!dflt-stock-all!206&limit=500&offset=0&orderBy=60%20asc,search.score()%20desc&searchText=',
+            'https://www.klwines.com/Products?&filters=sv2_47$eq$1$True$coming-soon$and,58$gt$0$True$$.and,57$le$0$True$$.and,48$eq$0$True$$!dflt-stock-all!203&limit=500&offset=0&orderBy=60%20asc,search.score()%20desc&searchText='
         ]
 
         logging.getLogger(__name__)
@@ -47,31 +47,27 @@ class KnLComingSoonSpider(scrapy.Spider):
 
         logging.getLogger(__name__)
 
-
         # grab each entry listed
         if response is not None:
 
-            for item in response.css('div.result-desc'):
+            for item in response.css("div.tf-product-image"):
 
                 if item is not None:
-
                     # get the inventory
 
                     # id used for hashmap
-                    id_ = item.xpath('./a/@href').extract()
-
+                    id_ = item.xpath('./a/@data-app-insights-track-search-doc-id').extract()
                     # grab the long name
-                    beer_name = item.xpath('./a/text()').extract()
+                    beer_name = item.xpath('./a/@title').extract()
 
                     # cleanup for json storage
                     id_ = ''.join(id_).strip()
-                    id_ = id_[7:]
+                    id_ = int(id_)
                     beer_name = ''.join(beer_name).strip()
                     #todo GET INVENTORY
-
                     yield {
                         'name': beer_name,
-                        'id': int(id_)
+                        'id': id_
                     }
 
             links = response.xpath(

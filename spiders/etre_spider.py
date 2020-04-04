@@ -59,7 +59,7 @@ class EtreSpider(scrapy.Spider):
                 link = subitem.css('h3.product-title').xpath('./a/@href').extract()
 
                 price = subitem.css('div.product-price-and-shipping').xpath('./span/text()').extract()
-                print name
+                print(name)
                 yield {
                      'name': name,
                      'id': int(product_id),

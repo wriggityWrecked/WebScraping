@@ -12,6 +12,8 @@ from datetime import datetime, timedelta
 from multiprocessing import Process, Pool
 from random import randint, normalvariate
 
+# TODO load via plugins
+
 from spiders.knl_beer_spider import KnLBeerSpider
 from spiders.knl_spirits_spider import KnLSpiritsSpider
 from spiders.knl_coming_soon import KnLComingSoonSpider
@@ -24,9 +26,30 @@ from spiders.total_wine_spider import TotalWineSpider
 from spiders.holy_mountain_spider import HolyMountainSpider
 from spiders.cantillion_spider import CantillionSpider
 from spiders.schramms_spider import SchrammsSpider
+from spiders.billetweb_spider import BilletwebSpider
+
+from spiders.sante_spider import SanteSpider
+from spiders.sante_full_inventory import SanteFullInventorySpider
 
 from scraper import Scraper
 
+def sara_full(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
+    """Run the scraper as a standalone script. This method blocks until finished"""
+
+    scraper = Scraper('santeFullInventory', SanteFullInventorySpider, 'sante_square_product_list', multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag, post_to_slack=post_to_slack)
+
+    output = scraper.run()
+    if debug_flag:
+        print output
+
+def sara(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
+    """Run the scraper as a standalone script. This method blocks until finished"""
+
+    scraper = Scraper('sante', SanteSpider, 'sante_square', multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag, post_to_slack=post_to_slack)
+
+    output = scraper.run()
+    if debug_flag:
+        print output
 
 def schramms(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
     """Run the scraper as a standalone script. This method blocks until finished"""
@@ -46,6 +69,19 @@ def cantillion(debug_flag=False, multiprocessing_queue=None, post_to_slack=True)
     #todo should be renamed
     scraper = Scraper('cantillion', CantillionSpider,
                                'cantillionwatch',
+                                multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag, post_to_slack=post_to_slack)
+
+    output = scraper.run()
+    if debug_flag:
+        print output
+
+
+def billetweb(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
+    """Run the scraper as a standalone script. This method blocks until finished"""
+
+    #todo should be renamed
+    scraper = Scraper('billetweb', BilletwebSpider,
+                               'cantillionwatch', product_link_formatter=lambda _id,_name: _name + ":" + _id,
                                 multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag, post_to_slack=post_to_slack)
 
     output = scraper.run()
@@ -243,7 +279,8 @@ if __name__ == "__main__":
         etre.__name__: etre, biab.__name__: biab, belgium_happiness.__name__: belgium_happiness,
         total_wine.__name__: total_wine, knl_coming_soon.__name__: knl_coming_soon,
         holy_mountain.__name__: holy_mountain, cantillion.__name__: cantillion,
-        schramms.__name__: schramms, knl_new_product.__name__: knl_new_product}
+        schramms.__name__: schramms, knl_new_product.__name__: knl_new_product, billetweb.__name__: billetweb,
+        sara.__name__: sara, sara_full.__name__: sara_full}
 
     parser = argparse.ArgumentParser(
         description='Invoke implemented scrapers by name with run options.')
@@ -293,4 +330,4 @@ if __name__ == "__main__":
 
         if debug_flag:
             print 'Running ' + str(method_list) + " once"
-        run(method_list, debug_flag=debug_flag)
+        run(method_list, debug_flag=debug_flag, post_to_slack=silent) #todo use the goddamn logger flag

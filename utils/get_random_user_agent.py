@@ -58,7 +58,7 @@ def get_random_user_agent():
         return DEFAULT_USER_AGENT
 
     # todo get the upper bound from the file (line number)
-    random_line_number = randint(1, 82)
+    random_line_number = randint(1, 79)
     count = 0
 
     with open(USER_AGENT_FILE) as _file:
