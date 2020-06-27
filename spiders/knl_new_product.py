@@ -24,6 +24,9 @@ class KnLNewProductSpider(scrapy.Spider):
         'DOWNLOAD_DELAY': str(download_delay),
         'LOG_ENABLED': False
     }
+    EXTENSIONS = {
+        'scrapy.telnet.TelnetConsole': None
+    }
 
     def start_requests(self):
 

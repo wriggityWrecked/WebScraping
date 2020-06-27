@@ -1,7 +1,7 @@
 import scrapy
 import datetime
 import logging
-from check_status import check_response_status
+#from check_status import check_response_status
 from random import *
 
 # can run with scrapy runspider etreSpider.py -o output.json
@@ -68,7 +68,7 @@ class EtreSpider(scrapy.Spider):
                  }
 
             next_page_link = response.css('a.next').xpath('./@href').extract()
-            print next_page_link
+            print(next_page_link)
 
             if next_page_link is not None:
                 logging.info('================================================================')

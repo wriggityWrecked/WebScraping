@@ -31,8 +31,12 @@ class HolyMountainSpider(scrapy.Spider):
         'COOKIES_ENABLED': 'false',
         'DOWNLOAD_DELAY': str(download_delay)
     }
+    EXTENSIONS = {
+        'scrapy.telnet.TelnetConsole': None
+    }
 
     def start_requests(self):
+
 
         urls = [
             'https://holymountainbrewing.com/beers'

@@ -218,7 +218,7 @@ class Scraper(object):
     def run_spider(self):
         """
         Rather than using scrapyd or executing the spider manually via scrapy,
-        this method creates a CrawlerRunnerand runs the spider provided at
+        this method creates a CrawlerRunner and runs the spider provided at
         construction.
 
         https://doc.scrapy.org/en/latest/topics/practices.html#run-from-script
@@ -244,7 +244,7 @@ class Scraper(object):
             })
 
             #runner.signals.connect(self.handle_spider_close, signals.spider_closed)
-
+            # https://stackoverflow.com/questions/40715369/how-to-save-the-data-from-a-scrapy-crawler-into-a-variable
             # todo deferred spider or something like
             # https://kirankoduru.github.io/python/multiple-scrapy-spiders.html
             _d = runner.crawl(self.spider)
@@ -269,6 +269,8 @@ class Scraper(object):
             # deferred.addBoth(lambda _: self.handle_spider_done)
 
             reactor.run()
+
+            # todo can we get data out of self.spider???
             return True, None
 
         except KeyboardInterrupt:
@@ -307,6 +309,10 @@ class Scraper(object):
 
                 return False, reason
 
+            # todo check if the new data here is empty, if so then skip.
+            # !!!!!!!!!!!
+            logging.debug();
+
             # Both files exist, OK to compare
             logging.debug(
                 'compare_inventory_files( ' + self.inventory_file_name + ", "
@@ -315,17 +321,17 @@ class Scraper(object):
                 self.inventory_file_name, self.new_file_name)
 
             # debug printing
-            if self.debug_flag:
-                dprint(removed, added)
+            # if self.debug_flag:
+            #     dprint(removed, added)
 
             # now we have a new inventory file, rotating to inventory_file_name
             now = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-            self.rotated_file_name = self.rotated_file_name + now + '.json'
+            # self.rotated_file_name = self.rotated_file_name + now + '.json'
+            #
+            # logging.debug('rotating ' + self.inventory_file_name +
+            #               ' to ' + self.rotated_file_name)
 
-            logging.debug('rotating ' + self.inventory_file_name +
-                          ' to ' + self.rotated_file_name)
-
-            os.rename(self.inventory_file_name, self.rotated_file_name)
+            # os.rename(self.inventory_file_name, self.rotated_file_name)
             os.rename(self.new_file_name, self.inventory_file_name)
 
             # compile results
@@ -333,15 +339,15 @@ class Scraper(object):
             results[message_formatter.ADDED_MAP_KEY] = added
             results[message_formatter.REMOVED_MAP_KEY] = removed
 
-            logging.debug('results = ' + str(results))
+            #logging.debug('results = ' + str(results))
 
-            # save results
-            self.results_output_file_name = self.results_output_file_name + '_' \
-                                            + now + '.json'
-
-            with open(self.results_output_file_name, 'w') as out_file:
-                logging.debug('saving ' + self.results_output_file_name)
-                json.dump(results, out_file)
+            # # save results
+            # self.results_output_file_name = self.results_output_file_name + '_' \
+            #                                 + now + '.json'
+            #
+            # with open(self.results_output_file_name, 'w') as out_file:
+            #     logging.debug('saving ' + self.results_output_file_name)
+            #     json.dump(results, out_file)
 
             return True, results
 
@@ -385,7 +391,7 @@ class Scraper(object):
 
     def handle_results(self, compared_results):
         # get the message
-        print(compared_results)
+        #print(compared_results)
 
         # legacy link
         link_lambda = self.product_link_formatter

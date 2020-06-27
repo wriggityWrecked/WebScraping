@@ -24,6 +24,9 @@ class KnLComingSoonSpider(scrapy.Spider):
         'DOWNLOAD_DELAY': str(download_delay),
         'LOG_ENABLED': False
     }
+    EXTENSIONS = {
+        'scrapy.telnet.TelnetConsole': None
+    }
 
     def start_requests(self):
 
@@ -65,6 +68,7 @@ class KnLComingSoonSpider(scrapy.Spider):
                     id_ = int(id_)
                     beer_name = ''.join(beer_name).strip()
                     #todo GET INVENTORY
+                    print(beer_name)
                     yield {
                         'name': beer_name,
                         'id': id_

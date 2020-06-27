@@ -47,7 +47,6 @@ def construct_notification_message(results_dictionary, link_format_lambda=DEFAUL
     #where added_list / removed_list can look like: {"1": "A", "2": "B", "3": "C"} 
     
     added_map = {}
-    removed_number = 0
     removed_map = {}
 
     constructed_added = []

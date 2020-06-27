@@ -31,7 +31,65 @@ from spiders.billetweb_spider import BilletwebSpider
 from spiders.sante_spider import SanteSpider
 from spiders.sante_full_inventory import SanteFullInventorySpider
 
+from spiders.sante_full_inventory import SanteFullInventorySpider
+from spiders.sideProjectSpider import SideProjectSpider
+
+from spiders.good_karma_spider import GoodKarmaSpider
+
+from spiders.holy_mountain_togo import HolyMountainToGo
+
+from spiders.suarez_spider import SuarezSpider
+
+from spiders.bottleworks_spider import BottleworksSpider
+
 from scraper import Scraper
+
+
+def bottleworks(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
+    """Run the scraper as a standalone script. This method blocks until finished"""
+
+    scraper = Scraper('bottleworks', BottleworksSpider, 'bottleworks', multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag, post_to_slack=post_to_slack)
+
+    output = scraper.run()
+    if debug_flag:
+        print(output)
+
+def suarez(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
+    """Run the scraper as a standalone script. This method blocks until finished"""
+
+    scraper = Scraper('suarez', SuarezSpider, 'suarez', multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag, post_to_slack=post_to_slack)
+
+    output = scraper.run()
+    if debug_flag:
+        print(output)
+
+def holy_mountain_togo(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
+    """Run the scraper as a standalone script. This method blocks until finished"""
+
+    scraper = Scraper('holyMountainToGo', HolyMountainToGo, 'holy_mountain', multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag, post_to_slack=post_to_slack)
+
+    output = scraper.run()
+    if debug_flag:
+        print(output)
+
+
+def good_karma(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
+    """Run the scraper as a standalone script. This method blocks until finished"""
+
+    scraper = Scraper('goodKarma', GoodKarmaSpider, 'good_karma', multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag, post_to_slack=post_to_slack)
+
+    output = scraper.run()
+    if debug_flag:
+        print(output)
+
+def side_project(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
+    """Run the scraper as a standalone script. This method blocks until finished"""
+
+    scraper = Scraper('sideProject', SideProjectSpider, 'side_project', multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag, post_to_slack=post_to_slack)
+
+    output = scraper.run()
+    if debug_flag:
+        print(output)
 
 def sara_full(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
     """Run the scraper as a standalone script. This method blocks until finished"""
@@ -40,7 +98,7 @@ def sara_full(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
 
     output = scraper.run()
     if debug_flag:
-        print output
+        print(output)
 
 def sara(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
     """Run the scraper as a standalone script. This method blocks until finished"""
@@ -49,7 +107,7 @@ def sara(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
 
     output = scraper.run()
     if debug_flag:
-        print output
+        print(output)
 
 def schramms(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
     """Run the scraper as a standalone script. This method blocks until finished"""
@@ -61,7 +119,7 @@ def schramms(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
 
     output = scraper.run()
     if debug_flag:
-        print output
+        print(output)
 
 def cantillion(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
     """Run the scraper as a standalone script. This method blocks until finished"""
@@ -73,7 +131,7 @@ def cantillion(debug_flag=False, multiprocessing_queue=None, post_to_slack=True)
 
     output = scraper.run()
     if debug_flag:
-        print output
+        print(output)
 
 
 def billetweb(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
@@ -86,7 +144,7 @@ def billetweb(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
 
     output = scraper.run()
     if debug_flag:
-        print output
+        print(output)
 
 def holy_mountain(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
     """Run the scraper as a standalone script. This method blocks until finished"""
@@ -97,7 +155,7 @@ def holy_mountain(debug_flag=False, multiprocessing_queue=None, post_to_slack=Tr
 
     output = scraper.run()
     if debug_flag:
-        print output
+        print(output)
 
 def total_wine(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
     """Run the scraper as a standalone script. This method blocks until finished"""
@@ -109,7 +167,7 @@ def total_wine(debug_flag=False, multiprocessing_queue=None, post_to_slack=True)
 
     output = scraper.run()
     if debug_flag:
-        print output
+        print(output)
 
 def knl_beer(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
     """Run the scraper as a standalone script. This method blocks until finished"""
@@ -121,7 +179,7 @@ def knl_beer(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
 
     output = scraper.run()
     if debug_flag:
-        print output
+        print(output)
 
 
 def knl_spirits(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
@@ -133,7 +191,7 @@ def knl_spirits(debug_flag=False, multiprocessing_queue=None, post_to_slack=True
 
     output = scraper.run()
     if debug_flag:
-        print output
+        print(output)
 
 def knl_coming_soon(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
     """Run the scraper as a standalone script. This method blocks until finished"""
@@ -144,7 +202,7 @@ def knl_coming_soon(debug_flag=False, multiprocessing_queue=None, post_to_slack=
 
     output = scraper.run()
     if debug_flag:
-        print output
+        print(output)
 
 def knl_new_product(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
     """Run the scraper as a standalone script. This method blocks until finished"""
@@ -155,18 +213,18 @@ def knl_new_product(debug_flag=False, multiprocessing_queue=None, post_to_slack=
 
     output = scraper.run()
     if debug_flag:
-        print output
+        print(output)
 
 def etre(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
     """Run the scraper as a standalone script. This method blocks until finished"""
-    
+
     scraper = Scraper('etre', EtreSpider,
                     'etrescraper', product_link='http://www.bieresgourmet.be/catalog/index.php?main_page\
                     =product_info&products_id=', multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag, post_to_slack=post_to_slack)
 
     output = scraper.run()
     if debug_flag:
-        print output
+        print(output)
 
 def biab(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
     """Run the scraper as a standalone script. This method blocks until finished"""
@@ -175,17 +233,17 @@ def biab(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
 
     output = scraper.run()
     if debug_flag:
-        print output
+        print(output)
 
 def belgium_happiness(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
     """Run the scraper as a standalone script. This method blocks until finished"""
 
-    scraper = Scraper('belgianHappiness', BelgianHappinessSpider, 'belgianhappiness', 
+    scraper = Scraper('belgianHappiness', BelgianHappinessSpider, 'belgianhappiness',
         multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag, post_to_slack=post_to_slack)
 
     output = scraper.run()
     if debug_flag:
-        print output
+        print(output)
         
 #rename run serial
 def run(methods_to_run, debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
@@ -267,7 +325,7 @@ def run_continuous(methods_to_run, debug_flag=False, lower_bound_seconds=0, uppe
             #https://stackoverflow.com/questions/8600161/executing-periodic-actions-in-python
 
     except KeyboardInterrupt:
-        print '\nKeyboardInterrupt caught, exiting\n'
+        print('\nKeyboardInterrupt caught, exiting\n')
 
 
 if __name__ == "__main__":
@@ -280,7 +338,9 @@ if __name__ == "__main__":
         total_wine.__name__: total_wine, knl_coming_soon.__name__: knl_coming_soon,
         holy_mountain.__name__: holy_mountain, cantillion.__name__: cantillion,
         schramms.__name__: schramms, knl_new_product.__name__: knl_new_product, billetweb.__name__: billetweb,
-        sara.__name__: sara, sara_full.__name__: sara_full}
+        sara.__name__: sara, sara_full.__name__: sara_full, side_project.__name__: side_project,
+        good_karma.__name__: good_karma, holy_mountain_togo.__name__: holy_mountain_togo, suarez.__name__: suarez,
+        bottleworks.__name__: bottleworks}
 
     parser = argparse.ArgumentParser(
         description='Invoke implemented scrapers by name with run options.')
@@ -308,7 +368,7 @@ if __name__ == "__main__":
     silent = parser.parse_args().silent
 
     if bounds is not None and len(bounds) != 2:
-        print 'must provide both upper an lower bound'
+        print('must provide both upper an lower bound')
         exit()
     # if bounds not none then auto continuous?
 
@@ -320,7 +380,7 @@ if __name__ == "__main__":
     if continuous:
 
         if debug_flag:
-            print 'Running ' + str(method_list) + " continuously"
+            print('Running ' + str(method_list) + " continuously")
 
         if bounds is not None:
             run_continuous(method_list, debug_flag=debug_flag, lower_bound_seconds=bounds[0], upper_bound_seconds=bounds[1], post_to_slack=silent)
@@ -329,5 +389,5 @@ if __name__ == "__main__":
     else:
 
         if debug_flag:
-            print 'Running ' + str(method_list) + " once"
+            print('Running ' + str(method_list) + " once")
         run(method_list, debug_flag=debug_flag, post_to_slack=silent) #todo use the goddamn logger flag
