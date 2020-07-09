@@ -42,8 +42,19 @@ from spiders.suarez_spider import SuarezSpider
 
 from spiders.bottleworks_spider import BottleworksSpider
 
+from spiders.iso_beer import IsoBeer
+
 from scraper import Scraper
 
+
+def iso_beer(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
+    """Run the scraper as a standalone script. This method blocks until finished"""
+
+    scraper = Scraper('iso_beer', IsoBeer, 'iso_beer', multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag, post_to_slack=post_to_slack)
+
+    output = scraper.run()
+    if debug_flag:
+        print(output)
 
 def bottleworks(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
     """Run the scraper as a standalone script. This method blocks until finished"""
@@ -340,7 +351,7 @@ if __name__ == "__main__":
         schramms.__name__: schramms, knl_new_product.__name__: knl_new_product, billetweb.__name__: billetweb,
         sara.__name__: sara, sara_full.__name__: sara_full, side_project.__name__: side_project,
         good_karma.__name__: good_karma, holy_mountain_togo.__name__: holy_mountain_togo, suarez.__name__: suarez,
-        bottleworks.__name__: bottleworks}
+        bottleworks.__name__: bottleworks, iso_beer.__name__: iso_beer}
 
     parser = argparse.ArgumentParser(
         description='Invoke implemented scrapers by name with run options.')

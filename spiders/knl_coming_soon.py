@@ -22,10 +22,13 @@ class KnLComingSoonSpider(scrapy.Spider):
     custom_settings = {
         'COOKIES_ENABLED': 'false',
         'DOWNLOAD_DELAY': str(download_delay),
-        'LOG_ENABLED': False
-    }
-    EXTENSIONS = {
-        'scrapy.telnet.TelnetConsole': None
+        'TELNETCONSOLE_ENABLED': 'false',
+        'EXTENSIONS' : {
+                'scrapy.extensions.telnet.TelnetConsole': None,
+                'scrapy.extensions.corestats.CoreStats': None,
+                'scrapy.extensions.memusage.MemoryUsage': None,
+                'scrapy.extensions.logstats.LogStats': None,
+        }
     }
 
     def start_requests(self):

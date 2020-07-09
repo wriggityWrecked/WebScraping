@@ -14,31 +14,40 @@ import hashlib
 class IsoBeer(scrapy.Spider):
 
     name = "isoBeer"
-    download_delay = 1
+    download_delay = 0
+    start_urls = [
+        'https://isobeersstore.ecwid.com/Sour-Beers-c51385628',
+        'https://isobeersstore.ecwid.com/'
+    ]
     custom_settings = {
         'COOKIES_ENABLED': 'false',
-        'DOWNLOAD_DELAY': str(download_delay)
+        'DOWNLOAD_DELAY': str(download_delay),
+        'TELNETCONSOLE_ENABLED': 'false',
+        'EXTENSIONS' : {
+                'scrapy.extensions.telnet.TelnetConsole': None,
+                'scrapy.extensions.corestats.CoreStats': None,
+                'scrapy.extensions.memusage.MemoryUsage': None,
+                'scrapy.extensions.logstats.LogStats': None,
+        }
     }
-    EXTENSIONS = {
-        'scrapy.telnet.TelnetConsole': None
-    }
 
-    def start_requests(self):
-
-        urls = [
-            'https://isobeersstore.ecwid.com/Sour-Beers-c51385628'
-        ]
-
-        logging.getLogger(__name__)
-
-        for url in urls:
-            # logging.info(
-            #     '================================================================')
-            # logging.info('scraping ' + url)
-            # logging.info(
-            #     '================================================================')
-
-            yield scrapy.Request(url=url, callback=self.parse, dont_filter=True)
+    # def start_requests(self):
+    #
+    #     urls = [
+    #         'https://isobeersstore.ecwid.com/Sour-Beers-c51385628',
+    #         'https://isobeersstore.ecwid.com/'
+    #     ]
+    #
+    #     logging.getLogger(__name__)
+    #
+    #     for url in urls:
+    #         # logging.info(
+    #         #     '================================================================')
+    #         # logging.info('scraping ' + url)
+    #         # logging.info(
+    #         #     '================================================================')
+    #
+    #         yield scrapy.Request(url=url, callback=self.parse, dont_filter=True)
 
     def parse(self, response):
 
