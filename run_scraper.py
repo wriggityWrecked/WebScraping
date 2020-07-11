@@ -272,7 +272,7 @@ def run(methods_to_run, debug_flag=False, multiprocessing_queue=None, post_to_sl
          'multiprocessing_queue': multiprocessing_queue, 'post_to_slack': post_to_slack})
         _p.start()
         _p.join()
-
+        print("done")
         #todo time each run
     if debug_flag:
         print('\n' + str(datetime.now()) + ' Finished ' + str(method) + ' \n')
@@ -330,7 +330,6 @@ def run_continuous(methods_to_run, debug_flag=False, lower_bound_seconds=0, uppe
             if debug_flag:
                 print('\n' + str(now) + ' sleeping ' + str(minutes) + 'm' +
                     str(seconds) + 's, will run at ' + str(then))
-
             time.sleep(random_wait_time_seconds) #todo threading.Timer?
 
             #https://stackoverflow.com/questions/8600161/executing-periodic-actions-in-python

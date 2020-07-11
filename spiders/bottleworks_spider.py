@@ -14,13 +14,17 @@ import hashlib
 class BottleworksSpider(scrapy.Spider):
 
     name = "bottleworksSpider"
-    download_delay = 1
+    download_delay = 0 # todo zero?
     custom_settings = {
         'COOKIES_ENABLED': 'false',
-        'DOWNLOAD_DELAY': str(download_delay)
-    }
-    EXTENSIONS = {
-        'scrapy.telnet.TelnetConsole': None
+        'DOWNLOAD_DELAY': str(download_delay),
+        'TELNETCONSOLE_ENABLED': 'false',
+        'EXTENSIONS' : {
+                'scrapy.extensions.telnet.TelnetConsole': None,
+                'scrapy.extensions.corestats.CoreStats': None,
+                'scrapy.extensions.memusage.MemoryUsage': None,
+                'scrapy.extensions.logstats.LogStats': None,
+        }
     }
 
     def start_requests(self):
@@ -38,7 +42,7 @@ class BottleworksSpider(scrapy.Spider):
             # logging.info(
             #     '================================================================')
 
-            yield scrapy.Request(url=url, callback=self.parse, dont_filter=True)
+            yield scrapy.Request(url=url, callback=self.parse, dont_filter=False)
 
     def parse(self, response):
 
@@ -67,7 +71,7 @@ class BottleworksSpider(scrapy.Spider):
 
                     if not in_stock:
                         name = "*(SOLD OUT)* " + name
-
+                    print(name)
                     yield {
                         'name': name,
                         'id': hashlib.md5(name.encode('utf-8')).hexdigest(),

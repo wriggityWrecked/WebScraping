@@ -239,8 +239,6 @@ class Scraper(object):
                 'USER_AGENT': get_random_user_agent.get_random_user_agent(),
                 'FEED_FORMAT': 'json',
                 'FEED_URI': self.new_file_name,
-                'AUTOTHROTTLE_ENABLED': 'True',
-                'DUPEFILTER_DEBUG': 'True'
             })
 
             #runner.signals.connect(self.handle_spider_close, signals.spider_closed)
@@ -310,8 +308,6 @@ class Scraper(object):
                 return False, reason
 
             # todo check if the new data here is empty, if so then skip.
-            # !!!!!!!!!!!
-            logging.debug();
 
             # Both files exist, OK to compare
             logging.debug(
