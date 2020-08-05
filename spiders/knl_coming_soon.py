@@ -16,12 +16,14 @@ import scrapy
 class KnLComingSoonSpider(scrapy.Spider):
     """Simple extension of scrapy.Spider for KnL.
     """
+    handle_httpstatus_list = [404, 400, 500, 503]
 
     name = "knlBeerSpider"
-    download_delay = 0 # todo zero?
+    download_delay = 0
     custom_settings = {
         'COOKIES_ENABLED': 'false',
         'DOWNLOAD_DELAY': str(download_delay),
+        'DOWNLOAD_TIMEOUT': 4,
         'TELNETCONSOLE_ENABLED': 'false',
         'EXTENSIONS' : {
                 'scrapy.extensions.telnet.TelnetConsole': None,

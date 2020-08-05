@@ -17,6 +17,7 @@ class SuarezSpider(scrapy.Spider):
     download_delay = 1
     custom_settings = {
         'COOKIES_ENABLED': 'false',
+        'TELNETCONSOLE_ENABLED': 'false',
         'DOWNLOAD_DELAY': str(download_delay)
     }
     EXTENSIONS = {
@@ -51,7 +52,7 @@ class SuarezSpider(scrapy.Spider):
             data = jsonresponse['data']
 
             for item in data:
-                name = item['name']
+                name = '*' + item['name'] + '* '
                 short_description = ''
 
                 if item['short_description'] is not None:
@@ -61,11 +62,13 @@ class SuarezSpider(scrapy.Spider):
                 if item['site_link'] is not None:
                     link = 'https://www.suareztogo.com/' + item['site_link']
 
-                name = name + ': ' + short_description + ': ' + link
-                if item['inventory']['enabled'] == False:
-                    name = '*(NOT ENABLED / PRE RELEASE)* ' + name
+                name = name + ':\n' + short_description + '\n' + link + '\n'
+                item['visibility_tl']
+
+                if item['inventory']['enabled'] == False or 'visibility_tl' not in item:
+                    name = '*_(NOT ENABLED / PRE RELEASE)_*: ' + name
                 elif item['inventory']['total'] <= 0:
-                    name = '*(SOLD OUT)* ' + name
+                    name = '*_(SOLD OUT)_*: ' + name
 
                 yield {
                     'name': name,

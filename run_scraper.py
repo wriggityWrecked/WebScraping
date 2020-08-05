@@ -33,6 +33,7 @@ from spiders.sante_full_inventory import SanteFullInventorySpider
 
 from spiders.sante_full_inventory import SanteFullInventorySpider
 from spiders.sideProjectSpider import SideProjectSpider
+from spiders.plumpjack_spider import PlumpjackSpider
 
 from spiders.good_karma_spider import GoodKarmaSpider
 
@@ -46,11 +47,19 @@ from spiders.iso_beer import IsoBeer
 
 from scraper import Scraper
 
+def plumpjack(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
+    """Run the scraper as a standalone script. This method blocks until finished"""
+
+    scraper = Scraper('plumpjack', PlumpjackSpider, 'plumpjack', multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag, post_to_slack=post_to_slack, auto_throttle=False)
+
+    output = scraper.run()
+    if debug_flag:
+        print(output)
 
 def iso_beer(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
     """Run the scraper as a standalone script. This method blocks until finished"""
 
-    scraper = Scraper('iso_beer', IsoBeer, 'iso_beer', multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag, post_to_slack=post_to_slack)
+    scraper = Scraper('iso_beer', IsoBeer, 'iso_beer', multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag, post_to_slack=post_to_slack, auto_throttle=False)
 
     output = scraper.run()
     if debug_flag:
@@ -59,7 +68,7 @@ def iso_beer(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
 def bottleworks(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
     """Run the scraper as a standalone script. This method blocks until finished"""
 
-    scraper = Scraper('bottleworks', BottleworksSpider, 'bottleworks', multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag, post_to_slack=post_to_slack)
+    scraper = Scraper('bottleworks', BottleworksSpider, 'bottleworks', multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag, post_to_slack=post_to_slack, auto_throttle=False)
 
     output = scraper.run()
     if debug_flag:
@@ -96,7 +105,7 @@ def good_karma(debug_flag=False, multiprocessing_queue=None, post_to_slack=True)
 def side_project(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
     """Run the scraper as a standalone script. This method blocks until finished"""
 
-    scraper = Scraper('sideProject', SideProjectSpider, 'side_project', multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag, post_to_slack=post_to_slack)
+    scraper = Scraper('sideProject', SideProjectSpider, 'side_project', multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag, post_to_slack=post_to_slack, auto_throttle=False)
 
     output = scraper.run()
     if debug_flag:
@@ -114,7 +123,7 @@ def sara_full(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
 def sara(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
     """Run the scraper as a standalone script. This method blocks until finished"""
 
-    scraper = Scraper('sante', SanteSpider, 'sante_square', multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag, post_to_slack=post_to_slack)
+    scraper = Scraper('sante', SanteSpider, 'sante_square', multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag, post_to_slack=post_to_slack, auto_throttle=False)
 
     output = scraper.run()
     if debug_flag:
@@ -186,7 +195,7 @@ def knl_beer(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
     #todo should be renamed
     scraper = Scraper('knl', KnLBeerSpider,
                                'knlscraper', product_link='http://www.klwines.com/p/i?i=',
-                                multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag, post_to_slack=post_to_slack)
+                                multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag, post_to_slack=post_to_slack, auto_throttle=False)
 
     output = scraper.run()
     if debug_flag:
@@ -198,7 +207,7 @@ def knl_spirits(debug_flag=False, multiprocessing_queue=None, post_to_slack=True
 
     scraper = Scraper('knlSpirits', KnLSpiritsSpider,
                                    'knlspiritsscraper', product_link='http://www.klwines.com/p/i?i=',
-                                    multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag, post_to_slack=post_to_slack)
+                                    multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag, post_to_slack=post_to_slack, auto_throttle=False)
 
     output = scraper.run()
     if debug_flag:
@@ -209,7 +218,7 @@ def knl_coming_soon(debug_flag=False, multiprocessing_queue=None, post_to_slack=
 
     scraper = Scraper('knlComingSoon', KnLComingSoonSpider,
                                    'knlcomingsoon', product_link_formatter=lambda _id,_name: _name + ' : http://www.klwines.com/p/i?i=' + _id,
-                                    multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag, post_removed=True, post_to_slack=post_to_slack)
+                                    multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag, post_removed=True, post_to_slack=post_to_slack, auto_throttle=False)
 
     output = scraper.run()
     if debug_flag:
@@ -220,7 +229,7 @@ def knl_new_product(debug_flag=False, multiprocessing_queue=None, post_to_slack=
 
     scraper = Scraper('knlNewProduct', KnLNewProductSpider,
                                    'knl_new_product', product_link_formatter=lambda _id,_name: _name + ' : http://www.klwines.com/p/i?i=' + _id,
-                                    multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag, post_to_slack=post_to_slack)
+                                    multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag, post_to_slack=post_to_slack, auto_throttle=False)
 
     output = scraper.run()
     if debug_flag:
@@ -272,7 +281,6 @@ def run(methods_to_run, debug_flag=False, multiprocessing_queue=None, post_to_sl
          'multiprocessing_queue': multiprocessing_queue, 'post_to_slack': post_to_slack})
         _p.start()
         _p.join()
-        print("done")
         #todo time each run
     if debug_flag:
         print('\n' + str(datetime.now()) + ' Finished ' + str(method) + ' \n')
@@ -350,7 +358,7 @@ if __name__ == "__main__":
         schramms.__name__: schramms, knl_new_product.__name__: knl_new_product, billetweb.__name__: billetweb,
         sara.__name__: sara, sara_full.__name__: sara_full, side_project.__name__: side_project,
         good_karma.__name__: good_karma, holy_mountain_togo.__name__: holy_mountain_togo, suarez.__name__: suarez,
-        bottleworks.__name__: bottleworks, iso_beer.__name__: iso_beer}
+        bottleworks.__name__: bottleworks, iso_beer.__name__: iso_beer, plumpjack.__name__: plumpjack}
 
     parser = argparse.ArgumentParser(
         description='Invoke implemented scrapers by name with run options.')

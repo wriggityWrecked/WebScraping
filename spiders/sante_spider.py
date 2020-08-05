@@ -14,9 +14,10 @@ import hashlib
 class SanteSpider(scrapy.Spider):
 
     name = "santeSpider"
-    download_delay = 1
+    download_delay = 0
     custom_settings = {
         'COOKIES_ENABLED': 'false',
+        'TELNETCONSOLE_ENABLED': 'false',
         'DOWNLOAD_DELAY': str(download_delay)
     }
     EXTENSIONS = {

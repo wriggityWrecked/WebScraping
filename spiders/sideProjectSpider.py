@@ -14,13 +14,17 @@ import hashlib
 class SideProjectSpider(scrapy.Spider):
 
     name = "sideProjectSpider"
-    download_delay = 1
+    download_delay = 0
     custom_settings = {
         'COOKIES_ENABLED': 'false',
-        'DOWNLOAD_DELAY': str(download_delay)
-    }
-    EXTENSIONS = {
-        'scrapy.telnet.TelnetConsole': None
+        'DOWNLOAD_DELAY': str(download_delay),
+        'TELNETCONSOLE_ENABLED': 'false',
+        'EXTENSIONS' : {
+                'scrapy.extensions.telnet.TelnetConsole': None,
+                'scrapy.extensions.corestats.CoreStats': None,
+                'scrapy.extensions.memusage.MemoryUsage': None,
+                'scrapy.extensions.logstats.LogStats': None,
+        }
     }
 
     def start_requests(self):
@@ -49,17 +53,20 @@ class SideProjectSpider(scrapy.Spider):
 
             for entry in response.xpath('//div[@id="productList"]//a'):
 
-                for item in entry.css('div.product-overlay'): #response
+               link = str(entry.xpath('@href').extract()[0])
+               link = 'https://www.sideprojectbrewing.com' + link
+
+               for item in entry.css('div.product-overlay'): #response
 
                     beers = item.css('div.product-title')
                     for beer in beers:
-                        name = beer.xpath('text()').extract_first()
-                        print(beer.xpath('./a/text()').extract())
+                        name = beer.xpath('text()').extract_first() + ': ' + link
 
                         if entry.css('div.product-mark'):
-                            name = '*(Sold Out)*' + name
+                            name = '*(Sold Out)* ' + name
 
-                        # yield {
-                        #     'name': name,
-                        #     'id': hashlib.md5(name.encode('utf-8')).hexdigest(), # don't use this, hash won't change if back in stock: item['id'],
-                        # }
+
+                        yield {
+                            'name': name,
+                            'id': hashlib.md5(name.encode('utf-8')).hexdigest(), # don't use this, hash won't change if back in stock: item['id'],
+                        }

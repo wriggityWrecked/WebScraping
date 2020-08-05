@@ -48,13 +48,15 @@ class Scraper(object):
     'Base class for all scrapers'
 
     def __init__(self, name, spider, slack_channel, product_link_formatter=message_formatter.DEFAULT_LINK_FORMATTER, \
-                 multiprocessing_queue=None, debug_flag=False, product_link=None, post_removed=False, post_to_slack=True):
+                 multiprocessing_queue=None, debug_flag=False, product_link=None, post_removed=False, post_to_slack=True, auto_throttle=True):
 
         # todo argument check name, spider, slack_channel, product_link, etc
 
         self.__stage_lock = threading.Lock()
         self.stage = ScraperStage.CREATED  # todo private access so public getter with lock?
 
+
+        self.auto_throttle = auto_throttle
         # name of the scraper
         self.name = name
 
@@ -236,9 +238,10 @@ class Scraper(object):
                 self.logger.info('Starting scraper ' + self.name)
 
             runner = CrawlerRunner({
-                'USER_AGENT': get_random_user_agent.get_random_user_agent(),
+                'USER_AGENT': get_random_user_agent.get_random_user_agent(), #todo this should be an input arg so we only open the file once
                 'FEED_FORMAT': 'json',
                 'FEED_URI': self.new_file_name,
+                'AUTOTHROTTLE_ENABLED': str(self.auto_throttle)
             })
 
             #runner.signals.connect(self.handle_spider_close, signals.spider_closed)

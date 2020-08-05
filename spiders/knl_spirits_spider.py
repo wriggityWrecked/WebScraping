@@ -14,10 +14,17 @@ class KnLSpiritsSpider(scrapy.Spider):
     """
 
     name = "knlSpiritsSpider"
-    download_delay = 1
+    download_delay = 0
     custom_settings = {
         'COOKIES_ENABLED': 'false',
-        'DOWNLOAD_DELAY': str(download_delay)
+        'DOWNLOAD_DELAY': str(download_delay),
+        'TELNETCONSOLE_ENABLED': 'false',
+        'EXTENSIONS' : {
+                'scrapy.extensions.telnet.TelnetConsole': None,
+                'scrapy.extensions.corestats.CoreStats': None,
+                'scrapy.extensions.memusage.MemoryUsage': None,
+                'scrapy.extensions.logstats.LogStats': None,
+        }
     }
 
     def start_requests(self):
@@ -25,7 +32,8 @@ class KnLSpiritsSpider(scrapy.Spider):
         urls = [
             #'http://www.klwines.com/Products/r?r=0+4294967191&d=1&t=&o=8&z=False'  # url for all spirits
             #'https://www.klwines.com/Spirits'
-            'https://www.klwines.com/Products?&filters=sv2_206&limit=2000&offset=0&orderBy=60%20asc,search.score()%20desc&searchText='
+            #'https://www.klwines.com/Products?&filters=sv2_206&limit=500&offset=0&orderBy=60%20asc,search.score()%20desc&searchText='
+            'https://www.klwines.com/Products?&filters=sv2_dflt-stock-instock!28$eq$(3)$True$ff-28-(3)--$or,45.or,48&limit=500&offset=0&orderBy=60%20asc,search.score()%20desc&searchText='
         ]
 
         logging.getLogger(__name__)

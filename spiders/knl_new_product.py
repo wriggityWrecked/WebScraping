@@ -16,16 +16,20 @@ import scrapy
 class KnLNewProductSpider(scrapy.Spider):
     """Simple extension of scrapy.Spider for KnL.
     """
+    # handle_httpstatus_list = [404, 400, 500, 503]
 
     name = "knlNewProductSpider"
     download_delay = 0
     custom_settings = {
         'COOKIES_ENABLED': 'false',
         'DOWNLOAD_DELAY': str(download_delay),
-        'LOG_ENABLED': False
-    }
-    EXTENSIONS = {
-        'scrapy.telnet.TelnetConsole': None
+        'TELNETCONSOLE_ENABLED': 'false',
+        'EXTENSIONS' : {
+                'scrapy.extensions.telnet.TelnetConsole': None,
+                'scrapy.extensions.corestats.CoreStats': None,
+                'scrapy.extensions.memusage.MemoryUsage': None,
+                'scrapy.extensions.logstats.LogStats': None,
+        }
     }
 
     def start_requests(self):
