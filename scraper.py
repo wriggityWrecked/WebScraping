@@ -232,9 +232,9 @@ class Scraper(object):
             self.start_time = time.time()
 
             # post debug message to slack
-            if self.debug_flag and self.post_to_slack:
-                self.handle_slack_message(DEBUG_SLACK_CHANNEL, 'Starting scraper ' + self.name)
-            elif self.debug_flag:
+            #if self.debug_flag and self.post_to_slack:
+            #    self.handle_slack_message(DEBUG_SLACK_CHANNEL, 'Starting scraper ' + self.name)
+            if self.debug_flag:
                 self.logger.info('Starting scraper ' + self.name)
 
             runner = CrawlerRunner({
@@ -381,10 +381,10 @@ class Scraper(object):
                                       + ', time taken = ' + str(timedelta(seconds=(time.time() - self.start_time))) \
                                       + ((',' + message) if len(message) > 0 else '')
         self.logger.info(finished_data)
-        
+
         # post to debug slack
-        if self.debug_flag and self.post_to_slack:
-            self.handle_slack_message(DEBUG_SLACK_CHANNEL, finished_data)
+        #if self.debug_flag and self.post_to_slack:
+        #    self.handle_slack_message(DEBUG_SLACK_CHANNEL, finished_data)
 
         return True, message
 
@@ -469,4 +469,5 @@ class Scraper(object):
         success, message = self.post_crawl()
 
         self.set_stage(ScraperStage.FINISHED)
+        print('time taken = ' + str(timedelta(seconds=(time.time() - self.start_time))))
         return True, message

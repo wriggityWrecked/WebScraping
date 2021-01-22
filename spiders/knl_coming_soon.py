@@ -23,7 +23,6 @@ class KnLComingSoonSpider(scrapy.Spider):
     custom_settings = {
         'COOKIES_ENABLED': 'false',
         'DOWNLOAD_DELAY': str(download_delay),
-        'DOWNLOAD_TIMEOUT': 4,
         'TELNETCONSOLE_ENABLED': 'false',
         'EXTENSIONS' : {
                 'scrapy.extensions.telnet.TelnetConsole': None,
@@ -37,7 +36,6 @@ class KnLComingSoonSpider(scrapy.Spider):
 
         urls = [
             'https://www.klwines.com/Products?&filters=sv2_47$eq$1$True$coming-soon$and,58$gt$0$True$$.and,57$le$0$True$$.and,48$eq$0$True$$!dflt-stock-all!206&limit=500&offset=0&orderBy=60%20asc,search.score()%20desc&searchText=',
-            'https://www.klwines.com/Products?&filters=sv2_47$eq$1$True$coming-soon$and,58$gt$0$True$$.and,57$le$0$True$$.and,48$eq$0$True$$!dflt-stock-all!203&limit=500&offset=0&orderBy=60%20asc,search.score()%20desc&searchText='
         ]
 
         logging.getLogger(__name__)

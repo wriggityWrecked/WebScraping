@@ -96,9 +96,10 @@ def post_message(channel, message):
 
     try:
 
-        slack_token = ""
-        with open(TOKEN_FILE_PATH_AND_NAME) as f:
-            slack_token = str(f.read()).strip()
+
+        slack_token = 'xoxb-162500751313-OBNdnubSZU0EYb3kjnZkaVMg' # bad but see if faster
+        # with open(TOKEN_FILE_PATH_AND_NAME) as f:
+        #     slack_token = str(f.read()).strip()
 
         sc = SlackClient(slack_token)
 

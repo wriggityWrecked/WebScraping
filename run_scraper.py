@@ -34,6 +34,7 @@ from spiders.sante_full_inventory import SanteFullInventorySpider
 from spiders.sante_full_inventory import SanteFullInventorySpider
 from spiders.sideProjectSpider import SideProjectSpider
 from spiders.plumpjack_spider import PlumpjackSpider
+from spiders.plumpjack_barrel import PlumpjackBarrelSpider
 
 from spiders.good_karma_spider import GoodKarmaSpider
 
@@ -45,7 +46,62 @@ from spiders.bottleworks_spider import BottleworksSpider
 
 from spiders.iso_beer import IsoBeer
 
+from spiders.knl_singles import KnlSinglesSpider
+
+from spiders.vesperSpider import VesperSpider
+
+from spiders.holywaterSpider import HolyWaterSpider
+
 from scraper import Scraper
+
+from spiders.ryeontheroad import RyeOnTheRoad
+
+def rye_on_the_road(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
+    """Run the scraper as a standalone script. This method blocks until finished"""
+
+    scraper = Scraper('rye_on_the_road', RyeOnTheRoad, 'rye_on_the_road', multiprocessing_queue=multiprocessing_queue, post_removed=True, debug_flag=debug_flag, post_to_slack=post_to_slack, auto_throttle=False)
+
+    output = scraper.run()
+    if debug_flag:
+        print(output)
+
+def holy_water(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
+    """Run the scraper as a standalone script. This method blocks until finished"""
+
+    scraper = Scraper('holy_water', HolyWaterSpider, 'holy_water', multiprocessing_queue=multiprocessing_queue, post_removed=True, debug_flag=debug_flag, post_to_slack=post_to_slack, auto_throttle=False)
+
+    output = scraper.run()
+    if debug_flag:
+        print(output)
+
+def vesper(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
+    """Run the scraper as a standalone script. This method blocks until finished"""
+
+    scraper = Scraper('vesper', VesperSpider, 'vesper', multiprocessing_queue=multiprocessing_queue, post_removed=True, debug_flag=debug_flag, post_to_slack=post_to_slack, auto_throttle=False)
+
+    output = scraper.run()
+    if debug_flag:
+        print(output)
+
+def knl_singles(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
+    """Run the scraper as a standalone script. This method blocks until finished"""
+
+    scraper = Scraper('knlSingles', KnlSinglesSpider, 'knl_singles', multiprocessing_queue=multiprocessing_queue, post_removed=True, debug_flag=debug_flag, post_to_slack=post_to_slack, auto_throttle=False)
+
+    output = scraper.run()
+    if debug_flag:
+        print(output)
+
+
+
+def plumpjack_barrel(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
+    """Run the scraper as a standalone script. This method blocks until finished"""
+
+    scraper = Scraper('plumpjackBarrel', PlumpjackBarrelSpider, 'plumpjack', multiprocessing_queue=multiprocessing_queue, debug_flag=debug_flag, post_to_slack=post_to_slack, auto_throttle=False)
+
+    output = scraper.run()
+    if debug_flag:
+        print(output)
 
 def plumpjack(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
     """Run the scraper as a standalone script. This method blocks until finished"""
@@ -320,11 +376,18 @@ def run_continuous(methods_to_run, debug_flag=False, lower_bound_seconds=0, uppe
     #todo use lamba to generate random number https://docs.python.org/2/tutorial/controlflow.html#lambda-expressions
     #or just function call based on user input, but passing in a lambda would be nice
     try:
-
+        deltas = []
         while True:
 
             #todo time this
+            start_time = time.time()
             run(methods_to_run, debug_flag=debug_flag, post_to_slack=post_to_slack)
+            deltas.append(timedelta(seconds=(time.time() - start_time)))
+
+            if len(deltas) > 10:
+                mean = sum(deltas, timedelta()) / len(deltas)
+                print('%s avg: %s, min %s, max %s' % (methods_to_run[0].__name__, mean, min(deltas), max(deltas)))
+                deltas[:] = []
 
             random_wait_time_seconds = randint(lower_bound_seconds, upper_bound_seconds)
             #     random_wait_time_seconds = normalvariate(25*60, 5*60)
@@ -335,10 +398,12 @@ def run_continuous(methods_to_run, debug_flag=False, lower_bound_seconds=0, uppe
             now = datetime.now()
             then = now + timedelta(hours=hours, minutes=minutes, seconds=seconds)
 
+
             if debug_flag:
                 print('\n' + str(now) + ' sleeping ' + str(minutes) + 'm' +
                     str(seconds) + 's, will run at ' + str(then))
             time.sleep(random_wait_time_seconds) #todo threading.Timer?
+
 
             #https://stackoverflow.com/questions/8600161/executing-periodic-actions-in-python
 
@@ -358,7 +423,9 @@ if __name__ == "__main__":
         schramms.__name__: schramms, knl_new_product.__name__: knl_new_product, billetweb.__name__: billetweb,
         sara.__name__: sara, sara_full.__name__: sara_full, side_project.__name__: side_project,
         good_karma.__name__: good_karma, holy_mountain_togo.__name__: holy_mountain_togo, suarez.__name__: suarez,
-        bottleworks.__name__: bottleworks, iso_beer.__name__: iso_beer, plumpjack.__name__: plumpjack}
+        bottleworks.__name__: bottleworks, iso_beer.__name__: iso_beer, plumpjack.__name__: plumpjack,
+        plumpjack_barrel.__name__: plumpjack_barrel, knl_singles.__name__: knl_singles, vesper.__name__: vesper,
+        holy_water.__name__: holy_water, rye_on_the_road.__name__: rye_on_the_road}
 
     parser = argparse.ArgumentParser(
         description='Invoke implemented scrapers by name with run options.')

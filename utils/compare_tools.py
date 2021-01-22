@@ -99,17 +99,23 @@ def compare_inventory_files(inventory_file, new_file):
     removed = {}
     new = {}
 
-    if not os.path.isfile(inventory_file):
-        logging.error(str(inventory_file) + ' not found!')
-        return removed, new
+    # if not os.path.isfile(inventory_file):
+    #     logging.error(str(inventory_file) + ' not found!')
+    #     return removed, new
+    #
+    # if not os.path.isfile(new_file):
+    #     logging.error(str(new_file) + ' not found!')
+    #     return removed, new
 
     if os.stat(inventory_file).st_size == 0:
         logging.error(str(inventory_file) + ' is empty!')
-        return removed, new
 
-    if not os.path.isfile(new_file):
-        logging.error(str(new_file) + ' not found!')
-        return removed, new
+        # old file is empty, but return new inventory
+        if os.stat(new_file).st_size != 0:
+            # nothing was removed but lots were added
+            return {}, inventory_file_to_dictionary(new_file)
+        else:
+            return removed, new
 
     if os.stat(new_file).st_size == 0:
         logging.error(str(new_file) + ' is empty!')
