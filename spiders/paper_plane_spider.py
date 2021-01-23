@@ -6,9 +6,9 @@ import scrapy
 import json
 import hashlib
 
-class HolyWaterSpider(scrapy.Spider):
+class PaperPlaneSpider(scrapy.Spider):
 
-    name = "santeSpider"
+    name = "paperPlaneSpider"
     download_delay = 0
     custom_settings = {
         'COOKIES_ENABLED': 'false',
@@ -22,7 +22,7 @@ class HolyWaterSpider(scrapy.Spider):
     def start_requests(self):
 
         urls = [
-            'https://www.holywater2go.com/app/store/api/v13/editor/users/132480005/sites/705432645679784969/products?page=1&per_page=50'
+            'https://paperplanewhiskies.square.site/app/store/api/v13/editor/users/134580378/sites/351295977687147888/products?page=1&per_page=200'
         ]
 
         logging.getLogger(__name__)
@@ -49,12 +49,13 @@ class HolyWaterSpider(scrapy.Spider):
             for item in data:
                 if 'name' in item:
                     name = item['name']
+                    price = item['price']['regular_low_formatted']
 
                     link = ''
                     if 'site_link' in item and item['site_link'] is not None:
-                        link = 'https://www.holywater2go.com/' + item['site_link']
+                        link = 'https://paperplanewhiskies.square.site/' + item['site_link']
 
-                    name = name  + ': ' + link
+                    name = name  + ': ' + price + ': ' + link
                     if item['inventory']['total'] <= 0:
                         name = '*(SOLD OUT)* ' + name
 

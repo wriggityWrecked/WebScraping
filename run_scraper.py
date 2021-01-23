@@ -56,6 +56,28 @@ from scraper import Scraper
 
 from spiders.ryeontheroad import RyeOnTheRoad
 
+from spiders.paper_plane_spider import PaperPlaneSpider
+
+from spiders.the_lex_spider import TheLexSpider
+
+def the_lex(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
+    """Run the scraper as a standalone script. This method blocks until finished"""
+
+    scraper = Scraper('the_lex', TheLexSpider, 'the_lex', multiprocessing_queue=multiprocessing_queue, post_removed=True, debug_flag=debug_flag, post_to_slack=post_to_slack, auto_throttle=False)
+
+    output = scraper.run()
+    if debug_flag:
+        print(output)
+
+def paper_plane(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
+    """Run the scraper as a standalone script. This method blocks until finished"""
+
+    scraper = Scraper('paper_plane', PaperPlaneSpider, 'paper_plane', multiprocessing_queue=multiprocessing_queue, post_removed=True, debug_flag=debug_flag, post_to_slack=post_to_slack, auto_throttle=False)
+
+    output = scraper.run()
+    if debug_flag:
+        print(output)
+
 def rye_on_the_road(debug_flag=False, multiprocessing_queue=None, post_to_slack=True):
     """Run the scraper as a standalone script. This method blocks until finished"""
 
@@ -425,7 +447,8 @@ if __name__ == "__main__":
         good_karma.__name__: good_karma, holy_mountain_togo.__name__: holy_mountain_togo, suarez.__name__: suarez,
         bottleworks.__name__: bottleworks, iso_beer.__name__: iso_beer, plumpjack.__name__: plumpjack,
         plumpjack_barrel.__name__: plumpjack_barrel, knl_singles.__name__: knl_singles, vesper.__name__: vesper,
-        holy_water.__name__: holy_water, rye_on_the_road.__name__: rye_on_the_road}
+        holy_water.__name__: holy_water, rye_on_the_road.__name__: rye_on_the_road,
+        the_lex.__name__: the_lex, paper_plane.__name__: paper_plane}
 
     parser = argparse.ArgumentParser(
         description='Invoke implemented scrapers by name with run options.')
